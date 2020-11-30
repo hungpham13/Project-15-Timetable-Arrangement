@@ -11,11 +11,3 @@ Input
 Dòng 1: ghi N và M 
 Dòng i+1 (i = 1,…, N): ghi t(i), g(i) và s(i)  
 Dòng N+2: ghi c(1), c(2), …, c(M)
-
-## Phân tích bài toán : Với mỗi lớp:
-Gọi T = [] : lưu số tiết của N lớp, n phần tử
-Gọi G = [] : lưu mã giáo viên, nhập vào
-Gọi S = [] : lưu số học sinh của N lớp, n phần tử
-Gọi Sh = [] : đánh dấu tiết bắt đầu học bắt đầu của
-Gọi D = [] : số ngày học trong tuần
-Gọi Shift = []: Số tiết trong ngày
