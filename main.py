@@ -20,10 +20,19 @@ so_buoi = 10
 so_tiet = 6
 all_gv = list(range(so_gv))
 all_p = list(range(m))
-all_n = list(range(so_buoi))
+all_b = list(range(so_buoi))
 all_t = list(range(so_tiet))
 all_l = list(range(n))
 
+#CP a.k.a or-tools
+
+model = cp_model.CpModel()
+lc = {}
+for l in all_l:
+    for p in all_p:
+        for b in all_b:
+            for t in all_t:
+                lc[(l, p, b, t]] = model.NewBoolVar('lc_l%ip%ib%it%i' %(l, p, b, t))
 def enforce_class(L, P, B, T):
     for p in all_p:
         for b in all_b:
@@ -39,4 +48,6 @@ for l in all_l:
     for p in all_p:
         for b in all_b:
             for t in all_t:
-                model.Add(enforce_class(l,p,b,t)).OnlyEnforceIf(lc[(l,p,b,t)]) # chỉ thêm constraint nếu mà biến lc[l,p,b,t]==1 
+                model.Add(enforce_class(l,p,b,t)).OnlyEnforceIf(lc[(l,p,b,t)]) # chỉ thêm constraint nếu mà biến lc[l,p,b,t]==1  
+                if S[c]<C[c]:
+                    model.Add(lc[l,p,b,t] == 0) # chỗ không đủ thì không được xếp vào
