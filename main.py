@@ -33,7 +33,43 @@ for l in all_l:
         for b in all_b:
             for t in all_t:
                 lc[(l, p, b, t)] = model.NewBoolVar('lc_l%ip%ib%it%i' %(l, p, b, t))
-                    
+
+                
+                
+                
+# sol. printer TBD               
+class SolutionPrinter(cp_model.CpSolverSolutionCallback):
+    """Print intermediate solutions."""
+
+    def __init__(self, lc, n, m, so_buoi, so_tiet, so_loi_giai):
+        cp_model.CpSolverSolutionCallback.__init__(self)
+        self._lc = lc
+        self._n = n
+        self._m = m
+        self._so_buoi = so_buoi
+        self._so_tiet = so_tiet
+        self._so_loi_giai = so_loi_giai
+        self._solution_count = 0
+        print('start')
+
+
+    def on_solution_callback(self):
+        if self._solution_count < self._so_loi_giai:
+            print('loi giai %i' % self._solution_count)
+            for l in range(self._n):
+                for p in range(self._m):
+                    for b in range(self._so_buoi):
+                        for p in range(self._so_tiet):
+                            if self.Value(self._lc[(l,p,b,t)]):
+                                print(l,p,b,t) # print l,p,b,t iff lc ==1
+        self._solution_count += 1
+
+    def solution_count(self):
+        return self._solution_count
+#end printer
+
+
+
 #Constraint 1,2             
 for b in all_b:
     for t in all_t:
@@ -53,11 +89,11 @@ def enforce_class(L, P, B, T):
             for t in all_t:
                 if (p,b,t)==(P,B,T):
                     if p <= P+classes_len[C]: # nếu mà nó nằm trong khoảng số tiết của lớp đó
-                        return lc[(L,b,p,t)] == 1
+                        return lc[(L,p,b,t)] == 1
                     else: # nếu mà nó nằm ngoài khoảng số tiết của lớp đó mà giông p,b,t
-                        return lc[(L,b,p,t)] == 0
+                        return lc[(L,p,b,t)] == 0
                 else: # khác p,b,t thì không được
-                    return return lc[(L,b,p,t)] == 0
+                    return lc[(L,p,b,t)] == 0
 for l in all_l:
     for p in all_p:
         for b in all_b:
@@ -67,3 +103,18 @@ for l in all_l:
                                                     for b in range(all_b))\
                                                     for p in range(all_p))==T[c]) # đủ số tiết của lớp
                 
+                
+                
+#Start solving and printing sols            
+solver = cp_model.CpSolver()
+solver.parameters.linearization_level = 0
+so_loi_giai = 5
+solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
+solver.SearchForAllSolutions(model, solution_printer)
+
+# print()
+# print('Statistics')
+# print('  - conflicts       : %i' % solver.NumConflicts())
+# print('  - branches        : %i' % solver.NumBranches())
+# print('  - wall time       : %f s' % solver.WallTime())
+# print('  - solutions found : %i' % solution_printer.solution_count())
