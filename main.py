@@ -32,7 +32,7 @@ for l in all_l:
     for p in all_p:
         for b in all_b:
             for t in all_t:
-                lc[(l, p, b, t]] = model.NewBoolVar('lc_l%ip%ib%it%i' %(l, p, b, t))
+                lc[(l, p, b, t)] = model.NewBoolVar('lc_l%ip%ib%it%i' %(l, p, b, t))
                     
 #Constraint 1,2             
 for b in all_b:
@@ -63,5 +63,7 @@ for l in all_l:
         for b in all_b:
             for t in all_t:
                 model.Add(enforce_class(l,p,b,t)).OnlyEnforceIf(lc[(l,p,b,t)]) # chỉ thêm constraint nếu mà biến lc[l,p,b,t]==1  
-                if S[c]<C[c]:
-                    model.Add(lc[l,p,b,t] == 0) # chỗ không đủ thì không được xếp vào
+                model.Add(sum(sum(sum(lc[(l,p,b,t)] for t in range(all_t))\
+                                                    for b in range(all_b))\
+                                                    for p in range(all_p))==T[c]) # đủ số tiết của lớp
+                
