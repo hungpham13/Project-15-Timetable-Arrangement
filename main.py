@@ -14,9 +14,7 @@ for c in range(n):
         D_G.append([c])
     else:
         D_G[gv-1].append(c)
-C = f.readline().split()
-for i in range(m): #kinda dumb
-    C[i] = int(C[i])
+C = [int(i) for i in f.readline().split()]
 so_gv = len(D_G)
 so_buoi = 10
 so_tiet = 6
