@@ -25,7 +25,9 @@ all_t = range(so_tiet)
 all_l = range(n)
 print(T,S,G,D_G)
 
-#CP a.k.a or-tools
+###################
+#CP a.k.a or-tools#
+###################
 
 model = cp_model.CpModel()
 lc = {}
@@ -158,3 +160,75 @@ print('Statistics')
 print('  - conflicts       : %i' % solver.NumConflicts())
 print('  - branches        : %i' % solver.NumBranches())
 print('  - wall time       : %f s' % solver.WallTime())
+
+
+###########
+#Backtrack#
+###########
+
+
+
+Count = [0]*n # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
+starting = [] # kết quả (lớp học lúc nào ở đâu)
+lc={} # biến lựa chọn
+# generating lc
+for l in all_l:
+	for p in all_p:
+		for b in all_b:
+			for t in all_t:
+				lc[(l,p,b,t)]=0
+def ngay_va_buoi(k): #lấy ngày và buổi từ k
+    if k//2==0:
+        ngay = 'Monday'
+    elif k//2==1:
+        ngay =  'Tuesday'
+    elif k//2==2:
+        ngay =  'Wednesday'
+    elif k//2==3:
+        ngay =  'Thursday'
+    elif k//2==4:
+        ngay =  'Friday'
+    if k % 2 == 0:
+        buoi= 'Morning'
+    elif k%2 == 1:
+        buoi = 'Afternoon'
+    return (ngay,buoi)
+def print_sol():
+    for sp in starting:
+        ngay,buoi = ngay_va_buoi(sp[2])
+        print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1)
+def check_candidate(l1,p1,b1,t1):
+    global Count
+    if Count[l1]>0 and Count[l1]<T[l1] :    #các tiết đặt sau lần đầu sẽ được xếp liền nhau
+        Count[l1]+=1
+        return True
+    else:   #các tiết xếp lần đầu sẽ phải thỏa mãn các constraint
+        if Count [l1]>=T[l1]: # ko xếp thừa tiết
+            return False
+        if t1+T[l1]>so_tiet:# đảm bảo đủ chỗ để xếp tiết (nếu lớp có 5 tiết thì không được bắt đầu ở tiết thứ 2) 
+            return False
+        if S[l1]>C[p1]:
+            return False #cons 1 #phòng thiếu chỗ sẽ không được xếp vào
+        for l in all_l:
+            if lc[(l,p1,b1,t1)] == 1: #cons 2 a #1 phòng chỉ chứa 1 lớp
+                return False
+        if G[l]==G[l1]:
+            for p in all_p:
+                if lc[(l,p,b1,t1)]==1: #cons 2 b #1 gv chỉ dạy 1 lớp
+                    return False
+        Count[l1]+=1
+        return 'First'
+def Backtrack(k):
+    global starting
+    if k < n:
+        for p in all_p:
+            for b in all_b:
+                for t in all_t:
+                    status = check_candidate(k,p,b,t)
+                    if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
+                        lc[(k,p,b,t)]=1
+                        if status =='First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
+                            starting.append((k,p,b,t))
+        Backtrack(k+1)
+Backtrack(0)
+print_sol()
