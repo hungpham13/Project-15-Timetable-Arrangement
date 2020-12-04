@@ -86,10 +86,13 @@ def enforce_class(l1, p1, b1, t1):
         for b in all_b:
             for t in all_t:
                 if (p,b,t)==(p1,b1,t1):
-                    if t <= t+T[l1]:     # nếu mà nó nằm trong khoảng số tiết của lớp đó
-                        return lc[(l1,p,b,t)] == 1
-                    else: # nếu mà nó nằm ngoài khoảng số tiết của lớp đó mà giông p,b,t
-                        return lc[(l1,p,b,t)] == 0
+                    if t+T[l1]>5:
+                        return False
+                    else:
+                        if t <= t+T[l1]:     # nếu mà nó nằm trong khoảng số tiết của lớp đó
+                            return lc[(l1,p,b,t)] == 1
+                        else: # nếu mà nó nằm ngoài khoảng số tiết của lớp đó mà giông p,b,t
+                                return lc[(l1,p,b,t)] == 0
                 else: # khác p,b,t thì không được
                     return lc[(l1,p,b,t)] == 0
 
@@ -98,9 +101,9 @@ for l in all_l:
         for b in all_b:
             for t in all_t:
                 model.Add(enforce_class(l,p,b,t)).OnlyEnforceIf(lc[(l,p,b,t)]) # chỉ thêm constraint nếu mà biến lc[l,p,b,t]==1  
-                model.Add(sum(sum(sum(lc[(l,p,b,t)] for t in all_t)\
-                                                    for b in all_b)\
-                                                    for p in all_p)==T[l]) # đủ số tiết của lớp
+    model.Add(sum(sum(sum(lc[(l,p,b,t)] for t in all_t)\
+                                        for b in all_b)\
+                                        for p in all_p)==T[l]) # đủ số tiết của lớp
 
 #Constraint 3 - Hung
 for l in all_l:
