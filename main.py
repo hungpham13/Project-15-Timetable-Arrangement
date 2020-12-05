@@ -83,30 +83,39 @@ for b in all_b:
                 if S[l] > C[p]:
                     model.Add(lc[(l,p,b,t)] == 0)       #1
 
-#Constraint 3 - Vu
-def enforce_class(l1, p1, b1, t1):
-    for p in all_p:
-        for b in all_b:
-            for t in all_t:
-                if (p,b,t)==(p1,b1,t1):
-                    if t+T[l1]>5:
-                        return False
-                    else:
-                        if t <= t+T[l1]:     # nếu mà nó nằm trong khoảng số tiết của lớp đó
-                            return lc[(l1,p,b,t)] == 1
-                        else: # nếu mà nó nằm ngoài khoảng số tiết của lớp đó mà giông p,b,t
-                                return lc[(l1,p,b,t)] == 0
-                else: # khác p,b,t thì không được
-                    return lc[(l1,p,b,t)] == 0
-
-for l in all_l:
-    for p in all_p:
-        for b in all_b:
-            for t in all_t:
-                model.Add(enforce_class(l,p,b,t)).OnlyEnforceIf(lc[(l,p,b,t)]) # chỉ thêm constraint nếu mà biến lc[l,p,b,t]==1  
-    model.Add(sum(sum(sum(lc[(l,p,b,t)] for t in all_t)\
-                                        for b in all_b)\
-                                        for p in all_p)==T[l]) # đủ số tiết của lớp
+    #Constraint 3 - Vu
+    def continuous(l, p, b):
+        if T[l] == 6:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 6 
+        if T[l] == 5:
+            return sum(lc[(l, p, b, t)] for t in range(0, 5)) == 5 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 6)) == 5 
+        if T[l] == 4 :
+            return sum(lc[(l, p, b, t)] for t in range(0, 4)) == 4 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 5)) == 4 or \
+                   sum(lc[(l, p, b, t)] for t in range(2, 6)) == 4                   
+        if T[l] == 3:
+            return sum(lc[(l, p, b, t)] for t in range(0, 3)) == 3 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 4)) == 3 or \
+                   sum(lc[(l, p, b, t)] for t in range(2, 5)) == 3 or \
+                   sum(lc[(l, p, b, t)] for t in range(3, 6)) == 3 
+        if T[l] == 2:
+            return sum(lc[(l, p, b, t)] for t in range(0, 2)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 3)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(2, 4)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(3, 5)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(4, 6)) == 2              
+        if T[l] == 1:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 1 
+                   
+    for l in all_l:
+        model.Add(sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
+                            for b in all_b) \
+                            for p in all_p) == T[l])  # đủ số tiết của lớp
+        for p in all_p:
+            for b in all_b:
+               for t in all_t:
+                    model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
 
 ##Constraint 3 - Hung
 #for l in all_l:
@@ -228,5 +237,6 @@ def Backtrack(k):
                         if status =='First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
                             starting.append((k,p,b,t))
         Backtrack(k+1)
+	if k==n:
+        print_sol()
 Backtrack(0)
-print_sol()
