@@ -210,65 +210,36 @@ def satisfied_constraints(lc):
     for b in all_b:
         for t in all_t:
             for g in all_gv:
-                model.Add(sum(sum(lc[(l,p,b,t)] for p in all_p) \
-                              for l in D_G[g]) <= 1)           #2b
+                if sum(sum(lc[(l,p,b,t)] for p in all_p) \
+                       for l in D_G[g]) > 1:           #2b
+                    return False
             for p in all_p:
-                model.Add(sum(lc[(l,p,b,t)] for l in all_l) <= 1) #2a
+                if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
+                    return False
                 for l in all_l:
-                    if S[l] > C[p]:
-                        model.Add(lc[(l,p,b,t)] == 0)       #1
+                    if S[l] > C[p] and lc[(l,p,b,t)] != 0: #1
+                        return False
+
+    for l in all_l:
+        if sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
+                            for b in all_b) \
+               for p in all_p) != T[l]:  # 3a
+            return False
+        for p in all_p:
+            for b in all_b:
+                if sum(lc[(l,p,b,t)] for t in all_t) != 0:
+                    l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) for i in range(7-T[l])]
+                    if T[l] not in l_S: #3b
+                        return False
 
 
 #Constraint 3 - Hung
-def valid_list(l_S,pivot):
-    '''list do dai >= 1, chua cac S_i'''
-    if sum(l_S) == 0: return True
-    has_pivot = False
-    for i in range(len(l_S)):
-        if l_S[i] == pivot:
-            has_pivot = True
-    if not has_pivot:
-        return False
-
-    up = True
-    for i in range(len(l_S)):
-        if i != 0 and l_S[i] + l_S[i-1] != 0:
-            if up and l_S[i] != l_S[i-1] + 1: return False
-            if not up and l_S[i] != l_S[i-1] - 1: return False
-        if l_S[i] == pivot:
-            up = False
-    return True
-def continuous(l,p,b):
-    #tiet phai lien nhau
-    l_S = []
-    for i in range(7-T[l]):
-        S_i = sum(lc[(l,p,b,t)] for t in range(i,i+T[l]))
-        l_S.append(S_i)
-        print(l_S)
-    return valid_list(l_S,T[l])
-
-# def enough(l):
-
-#             if S == T[l]: pivot += 1
-#             elif S == 0: zero += 1
-#     if pivot == 1 and zero == len(all_p)*len(all_b) - 1:
-#         return True
-#     else:
-#         return False
-
-for l in all_l:
-    for p in all_p:
-        for b in all_b:
-            periods = sum(lc[(l,p,b,t)] for t in all_t)
-            model.Add(periods == T[l] or periods == 0)
-    # for p in all_p:
-    #     for b in all_b:
-    #         continuous(l,p,b)
-for b in all_b:
-    print('Buoi',b)
-    for t in all_t:
-        print('-Tiet',t)
-        for l in all_l:
-            for p in all_p:
-                if solver.Value(lc[(l,p,b,t)]) == 1:
+def test_Backtracking():
+    for b in all_b:
+        print('Buoi',b)
+        for t in all_t:
+            print('-Tiet',t)
+            for l in all_l:
+                for p in all_p:
+                    if solver.Value(lc[(l,p,b,t)]) == 1:
                     print('--Lop',l,'hoc giao vien',G[l],'tai phong',p)
