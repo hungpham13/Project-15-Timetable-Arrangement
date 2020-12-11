@@ -1,7 +1,7 @@
 from ortools.sat.python import cp_model
 from random import randint
 
-def input(FileName,toPrint):
+def input(FileName):
     f = open(FileName,'r')
     (n, m) =  (int(i) for i in f.readline().split())
     T,S,G,D_G,C = [],[],[],[],[]
@@ -42,17 +42,29 @@ all_b = range(so_buoi)
 all_t = range(so_tiet)
 all_l = range(n)
 
+def generate_decision_var(algo):
+    ''' Generate descision variable base on specify algorithm
+    algo: string - 'o': or-tools, 'b': backtracking, 'h': heuristic'''
+    global lc
+    lc = {}
+    for l in all_l:
+        for p in all_p:
+            for b in all_b:
+                for t in all_t:
+                    if algo == 'o':
+                        lc[(l, p, b, t)] = model.NewBoolVar('lc_l%ip%ib%it%i' %(l, p, b, t))
+                    else:
+                        lc[(l,p,b,t)]=0
+    if algo == 'h':
+        global Count, starting
+        Count = [0]*n # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
+        starting = [] # kết quả (lớp học lúc nào ở đâu)
+
 ###################
 #CP a.k.a or-tools#
 ###################
 
 model = cp_model.CpModel()
-lc = {}
-for l in all_l:
-    for p in all_p:
-        for b in all_b:
-            for t in all_t:
-                lc[(l, p, b, t)] = model.NewBoolVar('lc_l%ip%ib%it%i' %(l, p, b, t))
 
 # sol. printer TBD               
 class SolutionPrinter(cp_model.CpSolverSolutionCallback):
@@ -85,58 +97,54 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
         return self._solution_count
 #end printer
 
-
-#Constraint 1,2
-for b in all_b:
-    for t in all_t:
-        for g in all_gv:
-            model.Add(sum(sum(lc[(l,p,b,t)] for p in all_p) \
-                          for l in D_G[g]) <= 1)           #2b
-        for p in all_p:
-            model.Add(sum(lc[(l,p,b,t)] for l in all_l) <= 1) #2a
-            for l in all_l:
-                if S[l] > C[p]:
-                    model.Add(lc[(l,p,b,t)] == 0)       #1
-
-
-
-#Constraint 3 - Vu
-def continuous(l, p, b):
-    if T[l] == 6:
-        return sum(lc[(l, p, b, t)] for t in all_t) == 6
-    if T[l] == 5:
-        return sum(lc[(l, p, b, t)] for t in range(0, 5)) == 5 or \
-               sum(lc[(l, p, b, t)] for t in range(1, 6)) == 5
-    if T[l] == 4 :
-        return sum(lc[(l, p, b, t)] for t in range(0, 4)) == 4 or \
-               sum(lc[(l, p, b, t)] for t in range(1, 5)) == 4 or \
-               sum(lc[(l, p, b, t)] for t in range(2, 6)) == 4
-    if T[l] == 3:
-        return sum(lc[(l, p, b, t)] for t in range(0, 3)) == 3 or \
-               sum(lc[(l, p, b, t)] for t in range(1, 4)) == 3 or \
-               sum(lc[(l, p, b, t)] for t in range(2, 5)) == 3 or \
-               sum(lc[(l, p, b, t)] for t in range(3, 6)) == 3
-    if T[l] == 2:
-        return sum(lc[(l, p, b, t)] for t in range(0, 2)) == 2 or \
-               sum(lc[(l, p, b, t)] for t in range(1, 3)) == 2 or \
-               sum(lc[(l, p, b, t)] for t in range(2, 4)) == 2 or \
-               sum(lc[(l, p, b, t)] for t in range(3, 5)) == 2 or \
-               sum(lc[(l, p, b, t)] for t in range(4, 6)) == 2
-    if T[l] == 1:
-        return sum(lc[(l, p, b, t)] for t in all_t) == 1
-
-for l in all_l:
-    model.Add(sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
-                        for b in all_b) \
-                        for p in all_p) == T[l])  # đủ số tiết của lớp
-    for p in all_p:
-        for b in all_b:
-           for t in all_t:
-                model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
-
-
-#Start solving and printing sols            
 def or_tools():
+    #Constraint 1,2
+    for b in all_b:
+        for t in all_t:
+            for g in all_gv:
+                model.Add(sum(sum(lc[(l,p,b,t)] for p in all_p) \
+                              for l in D_G[g]) <= 1)           #2b
+            for p in all_p:
+                model.Add(sum(lc[(l,p,b,t)] for l in all_l) <= 1) #2a
+                for l in all_l:
+                    if S[l] > C[p]:
+                        model.Add(lc[(l,p,b,t)] == 0)       #1
+
+    #Constraint 3 - Vu
+    def continuous(l, p, b):
+        if T[l] == 6:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 6
+        if T[l] == 5:
+            return sum(lc[(l, p, b, t)] for t in range(0, 5)) == 5 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 6)) == 5
+        if T[l] == 4 :
+            return sum(lc[(l, p, b, t)] for t in range(0, 4)) == 4 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 5)) == 4 or \
+                   sum(lc[(l, p, b, t)] for t in range(2, 6)) == 4
+        if T[l] == 3:
+            return sum(lc[(l, p, b, t)] for t in range(0, 3)) == 3 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 4)) == 3 or \
+                   sum(lc[(l, p, b, t)] for t in range(2, 5)) == 3 or \
+                   sum(lc[(l, p, b, t)] for t in range(3, 6)) == 3
+        if T[l] == 2:
+            return sum(lc[(l, p, b, t)] for t in range(0, 2)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(1, 3)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(2, 4)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(3, 5)) == 2 or \
+                   sum(lc[(l, p, b, t)] for t in range(4, 6)) == 2
+        if T[l] == 1:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 1
+
+    for l in all_l:
+        model.Add(sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
+                            for b in all_b) \
+                            for p in all_p) == T[l])  # đủ số tiết của lớp
+        for p in all_p:
+            for b in all_b:
+               for t in all_t:
+                    model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
+
+    #Start solving and printing sols            
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
     so_loi_giai = 1
@@ -153,18 +161,6 @@ def or_tools():
 ###########
 #Backtrack#
 ###########
-
-
-
-Count = [0]*n # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
-starting = [] # kết quả (lớp học lúc nào ở đâu)
-lc={} # biến lựa chọn
-# generating lc
-for l in all_l:
-	for p in all_p:
-		for b in all_b:
-			for t in all_t:
-				lc[(l,p,b,t)]=0
 def ngay_va_buoi(k): #lấy ngày và buổi từ k
     ngay = ['Monday','Tuesday','Wednesday','Thursday','Friday']
     buoi = ['Morning','Afternoon']
@@ -208,17 +204,18 @@ def Backtrack(k):
         Backtrack(k+1)
     if k == n:
         print_sol()
-Backtrack(0)
+# Backtrack(0)
 
-def Bactracking(lc, remaining_classses):
+def Backtracking(lc, remaining_classses):
     if not remaining_classses:
         return lc
+    print(satisfied_constraints(lc))
     if satisfied_constraints(lc):
         next = remaining_classses.pop()
         for p in all_p:
             for b in all_b:
                 for t in all_t:
-                    lc_next = lc[:]
+                    lc_next = dict(lc)
                     lc_next[(next,p,b,t)] = 1
                     next_state = Bactracking(lc_next, remaining_classses)
                     if next_state: return next_state
@@ -228,8 +225,7 @@ def satisfied_constraints(lc):
     for b in all_b:
         for t in all_t:
             for g in all_gv:
-                if sum(sum(lc[(l,p,b,t)] for p in all_p) \
-                       for l in D_G[g]) > 1:           #2b
+                if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1: #2b
                     return False
             for p in all_p:
                 if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
@@ -246,18 +242,23 @@ def satisfied_constraints(lc):
         for p in all_p:
             for b in all_b:
                 if sum(lc[(l,p,b,t)] for t in all_t) != 0:
-                    l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) for i in range(7-T[l])]
+                    l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) \
+                           for i in range(7-T[l])]
                     if T[l] not in l_S: #3b
                         return False
 
 
 #Constraint 3 - Hung
 def test_Backtracking():
+    generate_decision_var('b')
+    global lc
+    Backtracking(lc, all_l)
     for b in all_b:
         print('Buoi',b)
         for t in all_t:
             print('-Tiet',t)
             for l in all_l:
                 for p in all_p:
-                    if solver.Value(lc[(l,p,b,t)]) == 1:
-                    print('--Lop',l,'hoc giao vien',G[l],'tai phong',p)
+                    if lc[(l,p,b,t)] == 1:
+                        print('--Lop',l,'hoc giao vien',G[l],'tai phong',p)
+test_Backtracking()
