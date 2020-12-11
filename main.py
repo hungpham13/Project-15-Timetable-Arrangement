@@ -1,4 +1,6 @@
 from ortools.sat.python import cp_model
+from randm import randint
+
 def input(FileName,toPrint):
     f = open(FileName,'r')
     (n, m) =  (int(i) for i in f.readline().split())
@@ -14,6 +16,22 @@ def input(FileName,toPrint):
             D_G[gv-1].append(c)
     C = [int(i) for i in f.readline().split()]
     return (n,m,T,S,G,D_G,C)
+
+def randomize_data(FileName):
+    rnum_hsmax = 0
+    f = open(FileName, "w")
+    n, m = random.randint(5, 25), random.randint(2, 5)
+    f.write(str(n) + ' ' + str(m) + '\n')
+    for l in range(n):
+        rnum_hs = random.randint(30, 50)
+        f.write(str(random.randint(1, 6)) + ' ' + str(random.randint(1, 5)) + ' ' + str(rnum_hs) + '\n')
+        if rnum_hs > rnum_hsmax: #đảm bảo là luôn có phòng chứa được lớp nhiều học sinh nhất
+            rnum_hsmax = rnum_hs
+    room = ''
+    for i in range(m - 1):
+        room += str(random.randint(30, 50)) + ' '
+    f.write(room + str(rnum_hsmax))
+
 
 FileName= 'data.txt'
 n,m,T,S,G,D_G,C = input(FileName)
