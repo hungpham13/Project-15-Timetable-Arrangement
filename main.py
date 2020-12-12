@@ -169,6 +169,7 @@ def print_sol():
     for sp in starting:
         ngay,buoi = ngay_va_buoi(sp[2])
         print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1)
+
 def check_candidate(l1,p1,b1,t1):
     global Count
     if Count[l1]>0 and Count[l1]<T[l1] :    #các tiết đặt sau lần đầu sẽ được xếp liền nhau
