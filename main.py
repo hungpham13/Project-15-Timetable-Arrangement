@@ -57,7 +57,7 @@ def generate_decision_var(algo):
                         lc[(l,p,b,t)]=0
     if algo == 'h':
         global Count, starting
-        Count = [0]*n # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
+        Count = [0 for i in range(n)] # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
         starting = [] # kết quả (lớp học lúc nào ở đâu)
 
 ###################
@@ -193,17 +193,21 @@ def check_candidate(l1,p1,b1,t1):
 def Backtrack(k):
     global starting
     if k < n:
-        for p in all_p:
-            for b in all_b:
-                for t in all_t:
-                    status = check_candidate(k,p,b,t)
-                    if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
-                        lc[(k,p,b,t)] = 1
-                        if status == 'First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
-                            starting.append((k,p,b,t))
+        placement(k)
         Backtrack(k+1)
     if k == n:
         print_sol()
+def placement(k):
+    for p in all_p:
+        for b in all_b:
+            for t in all_t:
+                status = check_candidate(k,p,b,t)
+                if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
+                    lc[(k,p,b,t)] = 1
+                    if status == 'First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
+                        starting.append((k,p,b,t))
+                if Count[k] >= T[k]:
+                    return
 # Backtrack(0)
 
 def Backtracking(lc, remaining_classses):
