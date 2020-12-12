@@ -7,22 +7,21 @@ def input(FileName):
     global so_lop, so_phong, so_buoi, so_tiet, T,S,G,D_G,C
     so_buoi, so_tiet= 10, 6
     so_lop, so_phong =  (int(i) for i in f.readline().split())
-    T,S,G,D_G,C = [],[],[],[],[]
-    for c in range(so_lop):
+    T,S,G,D_G,C = [],[],[],{},[]
+    for l in range(so_lop):
         tiet, gv, so_hs = (int(i) for i in f.readline().split())
         T.append(tiet)
         S.append(so_hs)
         G.append(gv)
-        if len(D_G) < gv:
-            D_G.append([c])
+        if gv in D_G:
+            D_G[gv].append(l)
         else:
-            D_G[gv-1].append(c)
+            D_G[gv] = [l]
     C = [int(i) for i in f.readline().split()]
 
 
 FileName= 'data.txt'
 input(FileName)
-all_gv = range(len(D_G))
 all_p = range(so_phong)
 all_b = range(so_buoi)
 all_t = range(so_tiet)
@@ -69,7 +68,6 @@ def generate_decision_var(algo):
 #CP a.k.a or-tools#
 ###################
 
-model = cp_model.CpModel()
 
 # sol. printer TBD               
 class SolutionPrinter(cp_model.CpSolverSolutionCallback):
@@ -89,24 +87,24 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
     def on_solution_callback(self):
         self._solution_count += 1
         if self._solution_count <= self._so_loi_giai:
-            print('loi giai %i' % self._solution_count)
+            print('--------------loi giai %i----------------' % self._solution_count)
             for b in range(self._so_buoi):
                 print('Buoi',b)
                 for p in range(self._p):
                     for t in range(self._so_tiet):
                         for l in range(self._l):
                             if self.Value(self._lc[(l,p,b,t)]):
-                                print('Lop',l,'hoc phong',p,'tiet',t)
+                                print('Lop',l,'hoc phong',p,'giao vien',G[l],'tiet',t)
 
     def solution_count(self):
         return self._solution_count
 #end printer
 
-def or_tools():
+def add_constraints():
     #Constraint 1,2
     for b in all_b:
         for t in all_t:
-            for g in all_gv:
+            for g in D_G:
                 model.Add(sum(sum(lc[(l,p,b,t)] for p in all_p) \
                               for l in D_G[g]) <= 1)           #2b
             for p in all_p:
@@ -115,7 +113,7 @@ def or_tools():
                     if S[l] > C[p]:
                         model.Add(lc[(l,p,b,t)] == 0)       #1
 
-    #Constraint 3 - Vu
+    #Constraint 3
     def continuous(l, p, b):
         if T[l] == 6:
             return sum(lc[(l, p, b, t)] for t in all_t) == 6
@@ -149,11 +147,16 @@ def or_tools():
                for t in all_t:
                     model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
 
+def test_Ortools():
+    global model
+    model = cp_model.CpModel()
+    generate_decision_var('o')
+    add_constraints()
     #Start solving and printing sols            
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
     so_loi_giai = 1
-    solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
+    solution_printer = SolutionPrinter(lc, so_lop, so_phong, so_buoi, so_tiet, so_loi_giai)
     solver.SearchForAllSolutions(model, solution_printer)
     print(status)
     print('Statistics')
@@ -162,6 +165,7 @@ def or_tools():
     print('  - wall time       : %f s' % solver.WallTime())
     print('  - solutions found : %i' % solution_printer.solution_count())
 
+# test_Ortools()
 
 ###########
 #Heuristic#
@@ -282,7 +286,7 @@ def satisfied_c2b(lc,all_l):
     '''all_l: not all classes, just classes which are arranged'''
     for b in all_b:
         for t in all_t:
-            for g in all_gv:
+            for g in D_G:
                 if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1:
                     return False
     return True
