@@ -57,7 +57,7 @@ def generate_decision_var(algo):
                         lc[(l,p,b,t)]=0
     if algo == 'h':
         global Count, starting
-        Count = [0]*n # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
+        Count = [0 for i in range(n)] # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
         starting = [] # kết quả (lớp học lúc nào ở đâu)
 
 ###################
@@ -159,16 +159,36 @@ def or_tools():
 
 
 ###########
-#Backtrack#
+#Heuristic#
 ###########
+
 def ngay_va_buoi(k): #lấy ngày và buổi từ k
+
     ngay = ['Monday','Tuesday','Wednesday','Thursday','Friday']
     buoi = ['Morning','Afternoon']
+
     return(ngay[k//2],buoi[k%2])
-def print_sol():
+
+
+def print_sol(target):
+    lop_da_duoc_xep = []
+    final_target = 0
     for sp in starting:
         ngay,buoi = ngay_va_buoi(sp[2])
         print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1)
+        lop_da_duoc_xep.append(sp[0])
+        if target == 'P': #ưu tiên xếp tiết #period
+            final_target += T[sp[0]]
+        if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
+            final_target += LT[sp[0]]
+        if target == 'S': #ưu tiên xếp học sinh #Student
+            final_target += S[sp[0]]
+    print('The final target value is :', final_target)
+    p = [i for i in all_l_h if i not in lop_da_duoc_xep]
+    for l in p:
+        print('Unable to place class ', p, 'in the timetable due to limiting rooms and conflicting schedule')
+
+
 def check_candidate(l1,p1,b1,t1):
     global Count
     if Count[l1]>0 and Count[l1]<T[l1] :    #các tiết đặt sau lần đầu sẽ được xếp liền nhau
@@ -190,38 +210,71 @@ def check_candidate(l1,p1,b1,t1):
                     return False
         Count[l1]+=1
         return 'First'
-def Backtrack(k):
-    global starting
-    if k < n:
-        for p in all_p:
-            for b in all_b:
-                for t in all_t:
-                    status = check_candidate(k,p,b,t)
-                    if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
-                        lc[(k,p,b,t)] = 1
-                        if status == 'First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
-                            starting.append((k,p,b,t))
-        Backtrack(k+1)
-    if k == n:
-        print_sol()
-# Backtrack(0)
 
-def Backtracking(lc, remaining_classses):
-    if not remaining_classses:
-        return lc
-    print(satisfied_constraints(lc))
-    if satisfied_constraints(lc):
-        next = remaining_classses.pop()
+
+def Heuristic():
+    global starting
+    for l in all_l_h:
+        placement(l)
+
+
+def placement(k):
+    for p in all_p_h:
+        for b in all_b:
+            for t in all_t:
+                status = check_candidate(k,p,b,t)
+                if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
+                    lc[(k,p,b,t)] = 1
+                    if status == 'First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
+                        starting.append((k,p,b,t))
+                if Count[k] >= T[k]:
+                    return
+
+
+def HeuristicStart(target):
+    global all_l_h, all_p_h, LT
+    all_p_h = sort_list(all_p, C)
+    if target == 'P': #ưu tiên xếp tiết #period
+        all_l_h = sort_list(all_l, T)
+        Heuristic()
+    if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
+        LT = [T[i]*S[i] for i in range(n)]
+        all_l_h = sort_list(all_l, LT)
+        Heuristic()
+    if target == 'S': #ưu tiên xếp học sinh #Student
+        all_l_h = sort_list(all_l, S)
+        Heuristic()
+
+
+#generate_decision_var(h)        
+#HeuristicStart(target)   
+#print_sol(target)
+
+###########
+#Backtrack#
+###########
+
+remain_periods = [[6 for b in all_b] for p in all_p]
+def Backtracking(lc, rmp, rmc):
+    '''at first: rmc (remaining_classses) = len(all_l)
+                 rmp = remain_periods '''
+    if satisfied_constraints(lc,range(rmc,all_l)):
+        if not rmc:
+            return lc
+        l = rmc - 1
         for p in all_p:
             for b in all_b:
-                for t in all_t:
-                    lc_next = dict(lc)
-                    lc_next[(next,p,b,t)] = 1
-                    next_state = Bactracking(lc_next, remaining_classses)
+                if T[l] <= rmp[p][b]:
+                    lc_copy, rmp_copy = dict(lc), #TO-DO                
+                    for t in range(all_t-rmp[p][b], all_t-rmp[p][b]+T[l]):
+                        lc_copy[(next,p,b,t)] = 1
+                    rmp_copy[p][b] -= T[l]
+                    next_state = Bactracking(lc_copy, rmp_copy, rmc - 1)
                     if next_state: return next_state
     return False
 
-def satisfied_constraints(lc):
+def satisfied_constraints(lc,all_l):
+    '''all_l: Classes which are arranged'''
     for b in all_b:
         for t in all_t:
             for g in all_gv:
