@@ -255,22 +255,26 @@ def HeuristicStart(target):
 ###########
 
 remain_periods = [[6 for b in all_b] for p in all_p]
-def Backtracking(lc, remain_periods, remaining_classses):
-    '''at first: remaining_classses = len(all_l)'''
-    if not remaining_classses:
-        return lc
-    if satisfied_constraints(lc,list(range(remaining_classses))):
-        next = remaining_classses - 1
+def Backtracking(lc, rmp, rmc):
+    '''at first: rmc (remaining_classses) = len(all_l)
+                 rmp = remain_periods '''
+    if satisfied_constraints(lc,range(rmc,all_l)):
+        if not rmc:
+            return lc
+        l = rmc - 1
         for p in all_p:
             for b in all_b:
-                lc_next = dict(lc)
-                lc_next[(next,p,b,t)] = 1
-                next_state = Bactracking(lc_next, remaining_classses-1)
-                if next_state: return next_state
+                if T[l] <= rmp[p][b]:
+                    lc_copy, rmp_copy = dict(lc), #TO-DO                
+                    for t in range(all_t-rmp[p][b], all_t-rmp[p][b]+T[l]):
+                        lc_copy[(next,p,b,t)] = 1
+                    rmp_copy[p][b] -= T[l]
+                    next_state = Bactracking(lc_copy, rmp_copy, rmc - 1)
+                    if next_state: return next_state
     return False
 
-def satisfied_constraints(lc,taken_classes):
-    all_l = range(remaining_classses, len(all_l_global)) #list of taken classes
+def satisfied_constraints(lc,all_l):
+    '''all_l: Classes which are arranged'''
     for b in all_b:
         for t in all_t:
             for g in all_gv:
