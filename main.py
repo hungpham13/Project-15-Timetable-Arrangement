@@ -262,31 +262,28 @@ def HeuristicStart(target):
 def Backtracking(lc, rmp, rmc):
     '''at first: rmc (remaining_classses) = so_lop
                  rmp = remain_periods '''
-    if satisfied_c2(lc, range(rmc,so_lop)): #Constraint 2
+    if satisfied_c2b(lc, range(rmc,so_lop)): #Constraint 2b
         if not rmc:
             return lc
         l = rmc - 1
         for p in all_p:
             for b in all_b:
-                if T[l] <= rmp[p][b] and S[l] <= C[p]: #Constraint 3 and 1
+                if T[l] <= rmp[p][b] and S[l] <= C[p]: #c 3,1 and 2a
                     lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
                     start = so_tiet - rmp[p][b]
                     for t in range(start, start + T[l]):
                         lc_copy[(l,p,b,t)] = 1
                     rmp_copy[p][b] -= T[l]
-                    next_state = Backtracking(lc_copy, rmp_copy, rmc - 1)
-                    if next_state: return next_state
+                    next = Backtracking(lc_copy, rmp_copy, rmc - 1)
+                    if next: return next
     return False
 
-def satisfied_c2(lc,all_l):
-    '''all_l: Classes which are arranged'''
+def satisfied_c2b(lc,all_l):
+    '''all_l: not all classes, just classes which are arranged'''
     for b in all_b:
         for t in all_t:
             for g in all_gv:
-                if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1: #2b
-                    return False
-            for p in all_p:
-                if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
+                if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1:
                     return False
     return True
 
