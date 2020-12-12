@@ -159,16 +159,36 @@ def or_tools():
 
 
 ###########
-#Backtrack#
+#Heuristic#
 ###########
+
 def ngay_va_buoi(k): #lấy ngày và buổi từ k
+    
     ngay = ['Monday','Tuesday','Wednesday','Thursday','Friday']
     buoi = ['Morning','Afternoon']
+    
     return(ngay[k//2],buoi[k%2])
-def print_sol():
+
+
+def print_sol(target):
+    lop_da_duoc_xep = []
+    final_target = 0
     for sp in starting:
         ngay,buoi = ngay_va_buoi(sp[2])
         print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1)
+        lop_da_duoc_xep.append(sp[0])
+        if target == 'P': #ưu tiên xếp tiết #period
+            final_target += T[sp[0]]
+        if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
+            final_target += LT[sp[0]]
+        if target == 'S': #ưu tiên xếp học sinh #Student
+            final_target += S[sp[0]]
+    print('The final target value is :', final_target)
+    p = [i for i in all_l_h if i not in lop_da_duoc_xep]
+    for l in p:
+        print('Unable to place class ', p, 'in the timetable due to limiting rooms and conflicting schedule')
+
+        
 def check_candidate(l1,p1,b1,t1):
     global Count
     if Count[l1]>0 and Count[l1]<T[l1] :    #các tiết đặt sau lần đầu sẽ được xếp liền nhau
@@ -190,15 +210,16 @@ def check_candidate(l1,p1,b1,t1):
                     return False
         Count[l1]+=1
         return 'First'
-def Backtrack(k):
+    
+    
+def Heuristic():
     global starting
-    if k < n:
-        placement(k)
-        Backtrack(k+1)
-    if k == n:
-        print_sol()
+    for l in all_l_h:
+        placement(l)
+
+        
 def placement(k):
-    for p in all_p:
+    for p in all_p_h:
         for b in all_b:
             for t in all_t:
                 status = check_candidate(k,p,b,t)
@@ -208,7 +229,30 @@ def placement(k):
                         starting.append((k,p,b,t))
                 if Count[k] >= T[k]:
                     return
-# Backtrack(0)
+
+                
+def HeuristicStart(target):
+    global all_l_h, all_p_h, LT
+    all_p_h = sort_list(all_p, C)
+    if target == 'P': #ưu tiên xếp tiết #period
+        all_l_h = sort_list(all_l, T)
+        Heuristic()
+    if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
+        LT = [T[i]*S[i] for i in range(n)]
+        all_l_h = sort_list(all_l, LT)
+        Heuristic()
+    if target == 'S': #ưu tiên xếp học sinh #Student
+        all_l_h = sort_list(all_l, S)
+        Heuristic()
+        
+        
+#generate_decision_var(h)        
+#HeuristicStart(target)   
+#print_sol(target)
+
+###########
+#Backtrack#
+###########
 
 def Backtracking(lc, remaining_classses):
     if not remaining_classses:
