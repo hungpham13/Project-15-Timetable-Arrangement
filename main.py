@@ -1,21 +1,32 @@
 from ortools.sat.python import cp_model
+from copy import deepcopy
 from random import randint
 
 def input(FileName):
     f = open(FileName,'r')
-    (n, m) =  (int(i) for i in f.readline().split())
+    global so_lop, so_phong, so_buoi, so_tiet, T,S,G,D_G,C
+    so_buoi, so_tiet= 10, 6
+    so_lop, so_phong =  (int(i) for i in f.readline().split())
     T,S,G,D_G,C = [],[],[],[],[]
-    for c in range(n):
-        [so_tiet, gv, so_hs] = (int(i) for i in f.readline().split())
-        T.append(so_tiet)
+    for c in range(so_lop):
+        tiet, gv, so_hs = (int(i) for i in f.readline().split())
+        T.append(tiet)
         S.append(so_hs)
         G.append(gv)
-        if len(D_G)<gv:
+        if len(D_G) < gv:
             D_G.append([c])
         else:
             D_G[gv-1].append(c)
     C = [int(i) for i in f.readline().split()]
-    return (n,m,T,S,G,D_G,C)
+
+
+FileName= 'data.txt'
+input(FileName)
+all_gv = range(len(D_G))
+all_p = range(so_phong)
+all_b = range(so_buoi)
+all_t = range(so_tiet)
+all_l = range(so_lop)
 
 def randomize_data(FileName):
     rnum_hsmax = 0
@@ -33,15 +44,6 @@ def randomize_data(FileName):
     f.write(room + str(rnum_hsmax))#viết vào file số chỗ của m-1 phòng và phòng cuối (Phòng cuối sẽ luôn có số chỗ bằng số lớp nhiều học sinh nhất)
 
 
-FileName= 'data.txt'
-n,m,T,S,G,D_G,C = input(FileName)
-so_buoi,so_tiet= 10,6
-all_gv = range(len(D_G))
-all_p = range(m)
-all_b = range(so_buoi)
-all_t = range(so_tiet)
-all_l = range(n)
-
 def generate_decision_var(algo):
     ''' Generate descision variable base on specify algorithm
     algo: string - 'o': or-tools, 'b': backtracking, 'h': heuristic'''
@@ -57,8 +59,11 @@ def generate_decision_var(algo):
                         lc[(l,p,b,t)]=0
     if algo == 'h':
         global Count, starting
-        Count = [0 for i in range(n)] # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
+        Count = [0 for i in all_l] # dùng để chỉ những lớp chưa xếp và đã xếp được bao nhiêu tiết
         starting = [] # kết quả (lớp học lúc nào ở đâu)
+    if algo == 'b':
+        global remain_periods
+        remain_periods = [[so_tiet for b in all_b] for p in all_p]
 
 ###################
 #CP a.k.a or-tools#
@@ -254,26 +259,26 @@ def HeuristicStart(target):
 #Backtrack#
 ###########
 
-remain_periods = [[6 for b in all_b] for p in all_p]
 def Backtracking(lc, rmp, rmc):
-    '''at first: rmc (remaining_classses) = len(all_l)
+    '''at first: rmc (remaining_classses) = so_lop
                  rmp = remain_periods '''
-    if satisfied_constraints(lc,range(rmc,all_l)):
+    if satisfied_c2(lc, range(rmc,so_lop)): #Constraint 2
         if not rmc:
             return lc
         l = rmc - 1
         for p in all_p:
             for b in all_b:
-                if T[l] <= rmp[p][b]:
-                    lc_copy, rmp_copy = dict(lc), #TO-DO                
-                    for t in range(all_t-rmp[p][b], all_t-rmp[p][b]+T[l]):
-                        lc_copy[(next,p,b,t)] = 1
+                if T[l] <= rmp[p][b] and S[l] <= C[p]: #Constraint 3 and 1
+                    lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
+                    start = so_tiet - rmp[p][b]
+                    for t in range(start, start + T[l]):
+                        lc_copy[(l,p,b,t)] = 1
                     rmp_copy[p][b] -= T[l]
-                    next_state = Bactracking(lc_copy, rmp_copy, rmc - 1)
+                    next_state = Backtracking(lc_copy, rmp_copy, rmc - 1)
                     if next_state: return next_state
     return False
 
-def satisfied_constraints(lc,all_l):
+def satisfied_c2(lc,all_l):
     '''all_l: Classes which are arranged'''
     for b in all_b:
         for t in all_t:
@@ -283,35 +288,19 @@ def satisfied_constraints(lc,all_l):
             for p in all_p:
                 if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
                     return False
-                for l in all_l:
-                    if S[l] > C[p] and lc[(l,p,b,t)] != 0: #1
-                        return False
+    return True
 
-    for l in all_l:
-        if sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
-                            for b in all_b) \
-               for p in all_p) != T[l]:  # 3a
-            return False
-        for p in all_p:
-            for b in all_b:
-                if sum(lc[(l,p,b,t)] for t in all_t) != 0:
-                    l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) \
-                           for i in range(7-T[l])]
-                    if T[l] not in l_S: #3b
-                        return False
-
-
-#Constraint 3 - Hung
 def test_Backtracking():
     generate_decision_var('b')
-    global lc
-    Backtracking(lc, all_l)
+    result = Backtracking(lc, remain_periods, so_lop)
+    if not result:
+        print("Can't")
     for b in all_b:
         print('Buoi',b)
-        for t in all_t:
-            print('-Tiet',t)
+        for p in all_p:
+            print('-Phong',p)
             for l in all_l:
-                for p in all_p:
-                    if lc[(l,p,b,t)] == 1:
-                        print('--Lop',l,'hoc giao vien',G[l],'tai phong',p)
-test_Backtracking()
+                for t in all_t:
+                    if result[(l,p,b,t)] == 1:
+                        print('--Lop',l,'hoc giao vien',G[l],'tiet',t)
+# test_Backtracking()
