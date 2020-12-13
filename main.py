@@ -10,9 +10,8 @@ def input(FileName):
     T,S,G,D_G,C = [],[],[],{},[]
     for l in range(so_lop):
         tiet, gv, so_hs = (int(i) for i in f.readline().split())
-        T.append(tiet)
-        S.append(so_hs)
-        G.append(gv)
+        for X, y in zip((T,G,S),(tiet,gv,so_hs)):
+            X.append(y)
         if gv in D_G:
             D_G[gv].append(l)
         else:
@@ -255,9 +254,9 @@ def HeuristicStart(target):
         Heuristic()
 
 
-#generate_decision_var(h)        
-#HeuristicStart(target)   
-#print_sol(target)
+# generate_decision_var('h')
+# HeuristicStart(target)
+# print_sol(target)
 
 ###########
 #Backtrack#
@@ -295,13 +294,17 @@ def test_Backtracking():
     generate_decision_var('b')
     result = Backtracking(lc, remain_periods, so_lop)
     if not result:
-        print("Can't")
+        print("Can't arrange")
+    else:
+        print_solution(result,'b')
+
+def print_solution(lc, algo):
     for b in all_b:
         print('Buoi',b)
         for p in all_p:
             print('-Phong',p)
             for l in all_l:
                 for t in all_t:
-                    if result[(l,p,b,t)] == 1:
+                    if lc[(l,p,b,t)] == 1:
                         print('--Lop',l,'hoc giao vien',G[l],'tiet',t)
 # test_Backtracking()
