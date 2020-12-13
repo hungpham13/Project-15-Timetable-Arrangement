@@ -114,7 +114,7 @@ def add_constraints():
         for t in all_t:
             for g in D_G:
                 model.Add(sum(sum(lc[(l,p,b,t)] for p in all_p) \
-                              for l in D_G[g]) <= 1)           #2b
+                                                for l in g) <= 1)           #2b
             for p in all_p:
                 model.Add(sum(lc[(l,p,b,t)] for l in all_l) <= 1) #2a
                 for l in all_l:
