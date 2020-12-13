@@ -130,5 +130,5 @@ dmypy.json
 
 # vim
 *~ 
-.swp
-.swo
+*.swp
+*.swo
