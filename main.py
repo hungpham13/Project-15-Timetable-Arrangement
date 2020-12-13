@@ -21,10 +21,10 @@ def input(FileName):
 
 FileName= 'data.txt'
 input(FileName)
-all_p = range(so_phong)
+all_p = [p for p in range(m)]
 all_b = range(so_buoi)
 all_t = range(so_tiet)
-all_l = range(so_lop)
+all_l = [l for l in range(n)]
 
 def randomize_data(FileName):
     rnum_hsmax = 0
@@ -63,6 +63,12 @@ def generate_decision_var(algo):
         global remain_periods
         remain_periods = [[so_tiet for b in all_b] for p in all_p]
 
+def ngay_va_buoi(k): #lấy ngày và buổi từ k
+
+    ngay = ['Monday','Tuesday','Wednesday','Thursday','Friday']
+    buoi = ['Morning','Afternoon']
+
+    return(ngay[k//2],buoi[k%2])
 ###################
 #CP a.k.a or-tools#
 ###################
@@ -87,13 +93,16 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
         self._solution_count += 1
         if self._solution_count <= self._so_loi_giai:
             print('--------------loi giai %i----------------' % self._solution_count)
+            Class=[]
             for b in range(self._so_buoi):
-                print('Buoi',b)
                 for p in range(self._p):
                     for t in range(self._so_tiet):
                         for l in range(self._l):
                             if self.Value(self._lc[(l,p,b,t)]):
-                                print('Lop',l,'hoc phong',p,'giao vien',G[l],'tiet',t)
+                                if l not in Class:
+                                    ngay ,buoi = ngay_va_buoi(b)
+                                    print('Class', l+1 ,'starts on', ngay, buoi, 'period', t+1, 'at room ', p+1, 'with teacher', G[l]+1 )
+                                    Class.append(l)
 
     def solution_count(self):
         return self._solution_count
@@ -170,20 +179,13 @@ def test_Ortools():
 #Heuristic#
 ###########
 
-def ngay_va_buoi(k): #lấy ngày và buổi từ k
-
-    ngay = ['Monday','Tuesday','Wednesday','Thursday','Friday']
-    buoi = ['Morning','Afternoon']
-
-    return(ngay[k//2],buoi[k%2])
-
 
 def print_sol(target):
     lop_da_duoc_xep = []
     final_target = 0
     for sp in starting:
         ngay,buoi = ngay_va_buoi(sp[2])
-        print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1)
+        print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1,'with teacher', G[sp[0]]+1)
         lop_da_duoc_xep.append(sp[0])
         if target == 'P': #ưu tiên xếp tiết #period
             final_target += T[sp[0]]
@@ -253,11 +255,11 @@ def HeuristicStart(target):
         all_l_h = sort_list(all_l, S)
         Heuristic()
 
-
-# generate_decision_var('h')
-# HeuristicStart(target)
-# print_sol(target)
-
+def TestHeuristic(target):
+    generate_decision_var('h')
+    HeuristicStart(target)
+    print_sol(target)
+#TestHeuristic('LT')
 ###########
 #Backtrack#
 ###########
