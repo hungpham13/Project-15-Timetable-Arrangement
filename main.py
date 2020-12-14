@@ -148,15 +148,27 @@ def test_Ortools():
     #Start solving and printing sols            
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
-    so_loi_giai = 1
-    solution_printer = SolutionPrinter(lc, so_lop, so_phong, so_buoi, so_tiet, so_loi_giai)
-    solver.SearchForAllSolutions(model, solution_printer)
-    print(status)
-    print('Statistics')
-    print('  - conflicts       : %i' % solver.NumConflicts())
-    print('  - branches        : %i' % solver.NumBranches())
-    print('  - wall time       : %f s' % solver.WallTime())
-    print('  - solutions found : %i' % solution_printer.solution_count())
+    if status == 4: #optimal
+        for b in all_b:
+            for p in all_p:
+                for t in all_t:
+                    for l in all_l:
+                        if solver.Value(lc[(l,p,b,t)]) == 1:
+                            if l not in Class:
+                                ngay ,buoi = ngay_va_buoi(b)
+                                print('Class', l+1 ,'starts on', ngay, buoi, 'period', t+1, 'at room ', p+1, 'with teacher', G[l]+1 )
+                                Class.append(l)
+        # so_loi_giai = 1
+        # solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
+        # solver.SearchForAllSolutions(model, solution_printer) 
+        # print(status)
+        # print('Statistics')
+        # print('  - conflicts       : %i' % solver.NumConflicts())
+        # print('  - branches        : %i' % solver.NumBranches())
+        # print('  - wall time       : %f s' % solver.WallTime())
+        # print('  - solutions found : %i' % solution_printer.solution_count())
+    else:
+        print('Cannot place all class due to limiting rooms and/or conflicting schedule')
 
 # test_Ortools()
 
@@ -166,7 +178,7 @@ def test_Ortools():
 
 def sort_list(list1, list2):
     zipped_pairs = zip(list2, list1)
-    z = [x for _, x in sorted(zipped_pairs)]
+    z = [x for _, x in sorted(zipped_pairs,reverse=True)]
     return z
 
 def print_sol(target):
