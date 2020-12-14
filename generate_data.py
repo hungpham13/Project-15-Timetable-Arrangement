@@ -1,4 +1,5 @@
 from random import randint
+from math import floor
 
 def randomize_data(FileName, n, m):
     rnum_hsmax = 0
