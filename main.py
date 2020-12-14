@@ -1,13 +1,12 @@
 from ortools.sat.python import cp_model
 from copy import deepcopy
-from random import randint
 
 def input(FileName):
     f = open(FileName,'r')
     global so_lop, so_phong, so_buoi, so_tiet, T,S,G,D_G,C
     so_buoi, so_tiet= 10, 6
     so_lop, so_phong =  (int(i) for i in f.readline().split())
-    T,S,G,D_G,C = [],[],[],{},[]
+    T,S,G,D_G = [],[],[],{}
     for l in range(so_lop):
         tiet, gv, so_hs = (int(i) for i in f.readline().split())
         for X, y in zip((T,G,S),(tiet,gv,so_hs)):
@@ -17,29 +16,15 @@ def input(FileName):
         else:
             D_G[gv] = [l]
     C = [int(i) for i in f.readline().split()]
+    global all_p, all_b, all_t, all_l
+    all_p = list(range(so_phong))
+    all_b = range(so_buoi)
+    all_t = range(so_tiet)
+    all_l = list(range(so_lop))
 
 
-FileName= 'data.txt'
+FileName= 'data2.txt'
 input(FileName)
-all_p = [p for p in range(m)]
-all_b = range(so_buoi)
-all_t = range(so_tiet)
-all_l = [l for l in range(n)]
-
-def randomize_data(FileName):
-    rnum_hsmax = 0
-    f = open(FileName, "w")
-    n, m = randint(5, 25), randint(2, 5) #random số lớp (5-25) và số phòng (2-5)
-    f.write(str(n) + ' ' + str(m) + '\n')
-    for l in range(n):
-        rnum_hs = randint(30, 50) #random số học sinh (30-50)
-        f.write(str(randint(1, 6)) + ' ' + str(randint(1, 5)) + ' ' + str(rnum_hs) + '\n') #random độ dài (1-6) và giáo viên (1-5), học sinh rồi viết vào file 
-        if rnum_hs > rnum_hsmax: #đảm bảo là luôn có phòng chứa được lớp nhiều học sinh nhất
-            rnum_hsmax = rnum_hs
-    room = ''
-    for i in range(m - 1):
-        room += str(randint(30, 50)) + ' ' #random số chỗ của m-1 phòng (30-50)
-    f.write(room + str(rnum_hsmax))#viết vào file số chỗ của m-1 phòng và phòng cuối (Phòng cuối sẽ luôn có số chỗ bằng số lớp nhiều học sinh nhất)
 
 
 def generate_decision_var(algo):
@@ -286,7 +271,7 @@ def Backtracking(lc, rmp, rmc):
                     next = Backtracking(lc_copy, rmp_copy, rmc - 1)
                     if next: return next
     return False
-
+print(D_G)
 def satisfied_c2b(lc,all_l):
     '''all_l: not all classes, just classes which are arranged'''
     for b in all_b:
@@ -303,6 +288,7 @@ def test_Backtracking():
         print("Can't arrange")
     else:
         print_solution(result,'b')
+    return result
 
 def print_solution(lc, algo):
     for b in all_b:
@@ -313,4 +299,4 @@ def print_solution(lc, algo):
                 for t in all_t:
                     if lc[(l,p,b,t)] == 1:
                         print('--Lop',l,'hoc giao vien',G[l],'tiet',t)
-# test_Backtracking()
+test_Backtracking()
