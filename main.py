@@ -7,7 +7,7 @@ def input(FileName):
     global so_lop, so_phong, so_buoi, so_tiet, T,S,G,D_G,C
     so_buoi, so_tiet= 10, 6
     so_lop, so_phong =  (int(i) for i in f.readline().split())
-    T,S,G,D_G,C = [],[],[],{},[]
+    T,S,G,D_G = (),(),(),{}
     for l in range(so_lop):
         tiet, gv, so_hs = (int(i) for i in f.readline().split())
         for X, y in zip((T,G,S),(tiet,gv,so_hs)):
