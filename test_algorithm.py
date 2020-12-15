@@ -1,5 +1,31 @@
 import time, resource
-from main import test_Backtracking,input
+from main import test_Backtracking
+
+def Input(FileName):
+    f = open(FileName,'r')
+    global so_lop, so_phong, so_buoi, so_tiet, T,S,G,D_G,C
+    so_buoi, so_tiet= 10, 6
+    so_lop, so_phong =  (int(i) for i in f.readline().split())
+    T,S,G,D_G = [],[],[],{}
+    for l in range(so_lop):
+        tiet, gv, so_hs = (int(i) for i in f.readline().split())
+        for X, y in zip((T,G,S),(tiet,gv,so_hs)):
+            X.append(y)
+        if gv in D_G:
+            D_G[gv].append(l)
+        else:
+            D_G[gv] = [l]
+    C = [int(i) for i in f.readline().split()]
+    global all_p, all_b, all_t, all_l
+    all_p = list(range(so_phong))
+    all_b = range(so_buoi)
+    all_t = range(so_tiet)
+    all_l = list(range(so_lop))
+
+
+FileName= 'data2.txt'
+Input(FileName)
+
 def satisfied_constraints(lc):
     for b in all_b:
         for t in all_t:
@@ -25,8 +51,7 @@ def satisfied_constraints(lc):
                         return False
     return True
 
-def check_solution(testFunction, data):
-    input(data)
+def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
     lc = testFunction()
@@ -36,5 +61,4 @@ def check_solution(testFunction, data):
     else:
         print('Not optimal')
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-
-check_solution(test_Backtracking, 'data2.txt')
+check_solution(test_Backtracking)

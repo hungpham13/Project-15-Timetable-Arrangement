@@ -1,7 +1,8 @@
 from ortools.sat.python import cp_model
 from copy import deepcopy
+import time, resource
 
-def input(FileName):
+def Input(FileName):
     f = open(FileName,'r')
     global so_lop, so_phong, so_buoi, so_tiet, T,S,G,D_G,C
     so_buoi, so_tiet= 10, 6
@@ -23,8 +24,8 @@ def input(FileName):
     all_l = list(range(so_lop))
 
 
-FileName= 'data2.txt'
-input(FileName)
+FileName= 'data.txt'
+Input(FileName)
 
 
 def generate_decision_var(algo):
@@ -54,12 +55,13 @@ def ngay_va_buoi(k): #lấy ngày và buổi từ k
     buoi = ['Morning','Afternoon']
 
     return(ngay[k//2],buoi[k%2])
+
 ###################
 #CP a.k.a or-tools#
 ###################
 
 
-# sol. printer TBD               
+# sol. printer TBD
 class SolutionPrinter(cp_model.CpSolverSolutionCallback):
     """Print intermediate solutions."""
 
@@ -145,7 +147,7 @@ def test_Ortools():
     model = cp_model.CpModel()
     generate_decision_var('o')
     add_constraints()
-    #Start solving and printing sols            
+    #Start solving and printing sols
     solver = cp_model.CpSolver()
     status = solver.Solve(model)
     if status == 4: #optimal
@@ -160,7 +162,7 @@ def test_Ortools():
                                 Class.append(l)
         # so_loi_giai = 1
         # solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
-        # solver.SearchForAllSolutions(model, solution_printer) 
+        # solver.SearchForAllSolutions(model, solution_printer)
         # print(status)
         # print('Statistics')
         # print('  - conflicts       : %i' % solver.NumConflicts())
@@ -208,7 +210,7 @@ def check_candidate(l1,p1,b1,t1):
     else:   #các tiết xếp lần đầu sẽ phải thỏa mãn các constraint
         if Count [l1] >= T[l1]: # ko xếp thừa tiết
             return False
-        if t1 + T[l1] > so_tiet:# đảm bảo đủ chỗ để xếp tiết (nếu lớp có 5 tiết thì không được bắt đầu ở tiết thứ 2) 
+        if t1 + T[l1] > so_tiet:# đảm bảo đủ chỗ để xếp tiết (nếu lớp có 5 tiết thì không được bắt đầu ở tiết thứ 2)
             return False
         if S[l1] > C[p1]:
             return False #cons 1 #phòng thiếu chỗ sẽ không được xếp vào
@@ -249,7 +251,7 @@ def HeuristicStart(target):
         all_l_h = sort_list(all_l, T)
         Heuristic()
     if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
-        LT = [T[i]*S[i] for i in range(n)]
+        LT = [T[i]*S[i] for i in range(so_lop)]
         all_l_h = sort_list(all_l, LT)
         Heuristic()
     if target == 'S': #ưu tiên xếp học sinh #Student
@@ -260,7 +262,7 @@ def TestHeuristic(target):
     generate_decision_var('h')
     HeuristicStart(target)
     print_sol(target)
-#TestHeuristic('LT')
+# TestHeuristic('P')
 ###########
 #Backtrack#
 ###########
@@ -268,28 +270,28 @@ def TestHeuristic(target):
 def Backtracking(lc, rmp, rmc):
     '''at first: rmc (remaining_classses) = so_lop
                  rmp = remain_periods '''
-    if satisfied_c2b(lc, range(rmc,so_lop)): #Constraint 2b
-        if not rmc:
-            return lc
-        l = rmc - 1
-        for p in all_p:
-            for b in all_b:
-                if T[l] <= rmp[p][b] and S[l] <= C[p]: #c 3,1 and 2a
-                    lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
-                    start = so_tiet - rmp[p][b]
-                    for t in range(start, start + T[l]):
-                        lc_copy[(l,p,b,t)] = 1
-                    rmp_copy[p][b] -= T[l]
-                    next = Backtracking(lc_copy, rmp_copy, rmc - 1)
-                    if next: return next
-    return False
-print(D_G)
-def satisfied_c2b(lc,all_l):
-    '''all_l: not all classes, just classes which are arranged'''
+    if not rmc:
+        return lc
+    l = rmc - 1
     for b in all_b:
-        for t in all_t:
-            for g in D_G:
-                if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1:
+        for p in all_p:
+            start = so_tiet - rmp[p][b]
+            taking_t = range(start,start + T[l])
+            taken_l = range(rmc,so_lop)
+            if T[l] <= rmp[p][b] and S[l] <= C[p] and c2b(l,b,taking_t,taken_l,lc):
+                lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
+                for t in taking_t:
+                    lc_copy[(l,p,b,t)] = 1
+                rmp_copy[p][b] -= T[l]
+                next = Backtracking(lc_copy, rmp_copy, rmc - 1)
+                if next: return next
+    return False
+
+def c2b(l0,b0,taking_t,taken_l,lc):
+    for t in taking_t:
+        for p in all_p:
+            for l in taken_l:
+                if lc[(l,p,b0,t)] == 1 and G[l0] == G[l]:
                     return False
     return True
 
@@ -311,4 +313,49 @@ def print_solution(lc, algo):
                 for t in all_t:
                     if lc[(l,p,b,t)] == 1:
                         print('--Lop',l,'hoc giao vien',G[l],'tiet',t)
-test_Backtracking()
+
+#############
+# DEBUGGING #
+#############
+
+def satisfied_constraints(lc):
+    for b in all_b:
+        for t in all_t:
+            for g in D_G:
+                if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1: #2b
+                    print('2b')
+                    return False
+            for p in all_p:
+                if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
+                    print('2a')
+                    return False
+                for l in all_l:
+                    if S[l] > C[p] and lc[(l,p,b,t)] != 0: #1
+                        print('1')
+                        return False
+    for l in all_l:
+        if sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
+               for b in all_b) for p in all_p) != T[l]:  # 3a
+            print('3a')
+            return False
+        for p in all_p:
+            for b in all_b:
+                if sum(lc[(l,p,b,t)] for t in all_t) != 0:
+                    l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) \
+                           for i in range(7-T[l])]
+                    if T[l] not in l_S: #3b
+                        print('3b')
+                        return False
+    return True
+
+def check_solution(testFunction):
+    print('Start checking....')
+    start_time = time.time()
+    lc = testFunction()
+    print("---Time: %s seconds ---" % (time.time() - start_time))
+    if satisfied_constraints(lc):
+        print('Optimal solution')
+    else:
+        print('Not optimal')
+    print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+check_solution(test_Backtracking)
