@@ -24,7 +24,7 @@ def Input(FileName):
     all_l = list(range(so_lop))
 
 
-FileName= 'data2.txt'
+FileName= 'data4.txt'
 Input(FileName)
 
 
@@ -159,7 +159,7 @@ def test_Ortools(approach):
                                         for b in all_b \
                                         for t in all_t] )
 
-        varr=cp_model.LinearExpr.Sum(60*m*n*lc[(l, p, b, t)] * (t+1) -allt for l in all_l \
+        varr=cp_model.LinearExpr.Sum(so_lop*so_phong*so_buoi*so_tiet*lc[(l, p, b, t)] * (t+1) -allt for l in all_l \
                                         for p in all_p \
                                         for b in all_b \
                                         for t in all_t )
@@ -194,10 +194,6 @@ def test_Ortools(approach):
 #Heuristic#
 ###########
 
-def sort_list(list1, list2):
-    zipped_pairs = zip(list2, list1)
-    z = [x for _, x in sorted(zipped_pairs,reverse=True)]
-    return z
 
 def print_sol(target):
     lop_da_duoc_xep = []
@@ -261,17 +257,16 @@ def placement(k):
 
 
 def HeuristicStart(target):
-    global all_l_h, all_p_h, LT
-    all_p_h = sort_list(all_p, C)
+    global all_l_h, all_p_h
+    all_p_h = sorted(all_p,key = lambda x:C[x])
     if target == 'P': #ưu tiên xếp tiết #period
-        all_l_h = sort_list(all_l, T)
+        all_l_h = sorted(all_l,key = lambda x: T[x])
         Heuristic()
     if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
-        LT = [T[i]*S[i] for i in range(so_lop)]
-        all_l_h = sort_list(all_l, LT)
+        all_l_h = sorted(all_l,key = lambda x:T[x]*S[x])
         Heuristic()
     if target == 'S': #ưu tiên xếp học sinh #Student
-        all_l_h = sort_list(all_l, S)
+        all_l_h = sorted(all_l,key = lambda x:S[x])
         Heuristic()
 
 def TestHeuristic(target):
@@ -284,7 +279,7 @@ def TestHeuristic(target):
 ###########
 
 def Backtracking(lc, rmp, rmc):
-    '''at first: rmc (remaining_classses) = so_lop
+    '''at first: rmc (remaining_classses) = so lop con lai 
                  rmp = remain_periods '''
     if not rmc:
         return lc
@@ -323,13 +318,16 @@ def test_Backtracking():
 
 def print_solution(lc, algo):
     for b in all_b:
-        print('Buoi',b)
+        print('Buoi',b+1,' '.join(ngay_va_buoi(b)))
         for p in all_p:
-            print('-Phong',p)
+            print('----Phong %i: %i cho' %(p+1,C[p]))
             for l in all_l:
-                for t in all_t:
-                    if lc[(l,p,b,t)] == 1:
-                        print('--Lop',l,'hoc giao vien',G[l],'tiet',t)
+                periods = ' '.join(str(t+1) for t in all_t if lc[(l,p,b,t)] == 1)
+                if periods:
+                    print('-------------Lop %i: %i hoc sinh, giao vien %i, tiet %s' %(l,S[l],G[l],periods))
+            print('\n')
+        print('\n','\n')
+
 
 #############
 # DEBUGGING #
@@ -363,7 +361,7 @@ def right(lc):
 def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
-    lc = testFunction()
+    testFunction('P')
     print("---Time: %s seconds ---" % (time.time() - start_time))
     status = right(lc)
     if not list(status):
@@ -371,4 +369,5 @@ def check_solution(testFunction):
     else:
         print('Not optimal, violate constraint', ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-# check_solution(test_Backtracking)
+check_solution(TestHeuristic)
+# TestHeuristic('P')
