@@ -133,20 +133,6 @@ def add_constraints(approach):
         if T[l] == 1:
             return sum(lc[(l, p, b, t)] for t in all_t) == 1
 
-    def cung_phong_buoi(l, p, b): #2nd approach
-        if T[l] == 6:
-            return sum(lc[(l, p, b, t)] for t in all_t) == 6
-        if T[l] == 5:
-            return sum(lc[(l, p, b, t)] for t in all_t) == 5
-        if T[l] == 4:
-            return sum(lc[(l, p, b, t)] for t in all_t) == 4
-        if T[l] == 3:
-            return sum(lc[(l, p, b, t)] for t in all_t) == 3
-        if T[l] == 2:
-            return sum(lc[(l, p, b, t)] for t in all_t) == 2
-        if T[l] == 1:
-            return sum(lc[(l, p, b, t)] for t in all_t) == 1
-
 
     for l in all_l:
         model.Add(sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
@@ -158,7 +144,7 @@ def add_constraints(approach):
                     if approach == '1st':
                         model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
                     if approach == '2nd':
-                        model.Add(cung_phong_buoi(l, p, b)).OnlyEnforceIf(lc[(l,p,b,t)])
+                        model.Add(sum(lc[(l, p, b, t)] for t in all_t) == T[l]).OnlyEnforceIf(lc[(l,p,b,t)])#cùng phòng buổi #approach2
 
 def test_Ortools(approach):
     global model
@@ -247,10 +233,10 @@ def check_candidate(l1,p1,b1,t1):
         for l in all_l:
             if lc[(l,p1,b1,t1)] == 1: #cons 2 a #1 phòng chỉ chứa 1 lớp
                 return False
-        if G[l] == G[l1]:
-            for p in all_p:
-                if lc[(l,p,b1,t1)] == 1: #cons 2 b #1 gv chỉ dạy 1 lớp
-                    return False
+            if G[l] == G[l1]:
+                for p in all_p:
+                    if lc[(l,p,b1,t1)] == 1: #cons 2 b #1 gv chỉ dạy 1 lớp
+                        return False
         Count[l1]+=1
         return 'First'
 
