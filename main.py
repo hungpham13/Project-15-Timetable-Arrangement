@@ -176,6 +176,8 @@ def test_Ortools(approach):
                                 ngay ,buoi = ngay_va_buoi(b)
                                 print('Class', l+1 ,'starts on', ngay, buoi, 'period', t+1, 'at room ', p+1, 'with teacher', G[l]+1 )
                                 Class.append(l)
+        
+        # printer của CP
         # so_loi_giai = 1
         # solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
         # solver.SearchForAllSolutions(model, solution_printer)
@@ -195,23 +197,6 @@ def test_Ortools(approach):
 ###########
 
 
-def print_sol(target):
-    lop_da_duoc_xep = []
-    final_target = 0
-    for sp in starting:
-        ngay,buoi = ngay_va_buoi(sp[2])
-        print('Class', sp[0]+1 ,'starts on', ngay, buoi, 'period', sp[3]+1, 'at room ', sp[1]+1,'with teacher', G[sp[0]]+1)
-        lop_da_duoc_xep.append(sp[0])
-        if target == 'P': #ưu tiên xếp tiết #period
-            final_target += T[sp[0]]
-        if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
-            final_target += LT[sp[0]]
-        if target == 'S': #ưu tiên xếp học sinh #Student
-            final_target += S[sp[0]]
-    print('The final target value is :', final_target)
-    p = [i for i in all_l_h if i not in lop_da_duoc_xep]
-    for l in p:
-        print('Unable to place class ', p, 'in the timetable due to limiting rooms and conflicting schedule')
 
 
 def check_candidate(l1,p1,b1,t1):
@@ -234,7 +219,7 @@ def check_candidate(l1,p1,b1,t1):
                     if lc[(l,p,b1,t1)] == 1: #cons 2 b #1 gv chỉ dạy 1 lớp
                         return False
         Count[l1]+=1
-        return 'First'
+        return True
 
 
 def Heuristic():
@@ -250,10 +235,8 @@ def placement(k):
                 status = check_candidate(k,p,b,t)
                 if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
                     lc[(k,p,b,t)] = 1
-                    if status == 'First': #Nếu status là 'First'(lần đầu xếp lớp) thì lưu vào starting chỉ tg bắt đầu học
-                        starting.append((k,p,b,t))
                 if Count[k] >= T[k]:
-                    return
+                    return #Ngắt nếu đã xếp đủ
 
 
 def HeuristicStart(target):
