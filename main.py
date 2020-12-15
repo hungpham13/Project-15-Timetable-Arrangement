@@ -340,36 +340,35 @@ def right(lc):
         for t in all_t:
             for g in D_G:
                 if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1: #2b
-                    return ('2b')
+                    yield ('2b')
             for p in all_p:
                 if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
-                    return ('2a')
+                    yield ('2a')
                 for l in all_l:
                     if S[l] > C[p] and lc[(l,p,b,t)] != 0: #1
-                        return ('1')
+                        yield ('1')
     for l in all_l:
         if sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
                for b in all_b) for p in all_p) != T[l]:  # 3a
-            return ('3a')
+            print('Class',l)
+            yield ('3a')
         for p in all_p:
             for b in all_b:
                 if sum(lc[(l,p,b,t)] for t in all_t) != 0:
                     l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) \
                            for i in range(7-T[l])]
                     if T[l] not in l_S: #3b
-                        return ('3b')
-    return True
+                        yield ('3b')
 
 def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
-    testFunction('LT')
+    lc = testFunction()
     print("---Time: %s seconds ---" % (time.time() - start_time))
     status = right(lc)
-    if status == True:
+    if not list(status):
         print('Optimal solution')
     else:
-        print('Not optimal, violate constraint', status)
+        print('Not optimal, violate constraint', ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-check_solution(TestHeuristic)
-
+# check_solution(test_Backtracking)
