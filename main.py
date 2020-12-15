@@ -24,7 +24,7 @@ def Input(FileName):
     all_l = list(range(so_lop))
 
 
-FileName= 'data3.txt'
+FileName= 'data2.txt'
 Input(FileName)
 
 
@@ -305,23 +305,24 @@ def Backtracking(lc, rmp, rmc):
     l = rmc - 1
     for b in all_b:
         for p in all_p:
-            start = so_tiet - rmp[p][b]
-            if T[l] <= rmp[p][b] and S[l] <= C[p] and c2b(l,b,start,rmc,lc):
+            if satisfy_constraints(l,b,p,rmp,rmc,lc):
                 lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
-                for t in range(start,start + T[l]):
+                taking_t = range(so_tiet - rmp[p][b], so_tiet - rmp[p][b] + T[l])
+                for t in taking_t:
                     lc_copy[(l,p,b,t)] = 1
                 rmp_copy[p][b] -= T[l]
                 next = Backtracking(lc_copy, rmp_copy, rmc - 1)
                 if next: return next
     return False
 
-def c2b(l0,b0,start_t,rmc,lc):
-    taking_t = range(start_t,start_t + T[l0])
-    taken_l = range(rmc,so_lop)
-    for t in taking_t:
+def satisfy_constraints(l0,b0,p0,rmp,rmc,lc):
+    if T[l0] > rmp[p0][b0] or S[l0] > C[p0]: #1,2a,3
+        return False
+    start_t = so_tiet - rmp[p0][b0]
+    for t in range(start_t, start_t + T[l0]): #taking_t
         for p in all_p:
-            for l in taken_l:
-                if lc[(l,p,b0,t)] == 1 and G[l0] == G[l]:
+            for l in range(rmc, so_lop): #taken_l
+                if lc[(l,p,b0,t)] == 1 and G[l0] == G[l]: #2b
                     return False
     return True
 
@@ -348,44 +349,41 @@ def print_solution(lc, algo):
 # DEBUGGING #
 #############
 
-def satisfied_constraints(lc):
+def right(lc):
     for b in all_b:
         for t in all_t:
             for g in D_G:
                 if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1: #2b
-                    print('2b')
-                    return False
+                    return ('2b')
             for p in all_p:
                 if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
-                    print('2a')
-                    return False
+                    return ('2a')
                 for l in all_l:
                     if S[l] > C[p] and lc[(l,p,b,t)] != 0: #1
-                        print('1')
-                        return False
+                        return ('1')
     for l in all_l:
         if sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
                for b in all_b) for p in all_p) != T[l]:  # 3a
-            print('3a')
-            return False
+            return ('3a')
         for p in all_p:
             for b in all_b:
                 if sum(lc[(l,p,b,t)] for t in all_t) != 0:
                     l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) \
                            for i in range(7-T[l])]
                     if T[l] not in l_S: #3b
-                        print('3b')
-                        return False
+                        return ('3b')
     return True
 
 def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
-    lc = testFunction()
+    testFunction('LT')
     print("---Time: %s seconds ---" % (time.time() - start_time))
-    if satisfied_constraints(lc):
+    status = right(lc)
+    if status == True:
         print('Optimal solution')
     else:
-        print('Not optimal')
+        print('Not optimal, violate constraint', status)
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-check_solution(test_Backtracking)
+check_solution(TestHeuristic)
+
