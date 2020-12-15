@@ -24,7 +24,7 @@ def Input(FileName):
     all_l = list(range(so_lop))
 
 
-FileName= 'data.txt'
+FileName= 'data3.txt'
 Input(FileName)
 
 
@@ -95,7 +95,7 @@ class SolutionPrinter(cp_model.CpSolverSolutionCallback):
         return self._solution_count
 #end printer
 
-def add_constraints():
+def add_constraints(approach):
     #Constraint 1,2
     for b in all_b:
         for t in all_t:
@@ -109,7 +109,7 @@ def add_constraints():
                         model.Add(lc[(l,p,b,t)] == 0)       #1
 
     #Constraint 3
-    def continuous(l, p, b):
+    def continuous(l, p, b): #1st approach
         if T[l] == 6:
             return sum(lc[(l, p, b, t)] for t in all_t) == 6
         if T[l] == 5:
@@ -133,6 +133,21 @@ def add_constraints():
         if T[l] == 1:
             return sum(lc[(l, p, b, t)] for t in all_t) == 1
 
+    def cung_phong_buoi(l, p, b): #2nd approach
+        if T[l] == 6:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 6
+        if T[l] == 5:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 5
+        if T[l] == 4:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 4
+        if T[l] == 3:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 3
+        if T[l] == 2:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 2
+        if T[l] == 1:
+            return sum(lc[(l, p, b, t)] for t in all_t) == 1
+
+
     for l in all_l:
         model.Add(sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
                             for b in all_b) \
@@ -140,15 +155,30 @@ def add_constraints():
         for p in all_p:
             for b in all_b:
                for t in all_t:
-                    model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
+                    if approach == '1st':
+                        model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
+                    if approach == '2nd':
+                        model.Add(cung_phong_buoi(l, p, b)).OnlyEnforceIf(lc[(l,p,b,t)])
 
-def test_Ortools():
+def test_Ortools(approach):
     global model
     model = cp_model.CpModel()
     generate_decision_var('o')
-    add_constraints()
+    add_constraints(approach)
     #Start solving and printing sols
     solver = cp_model.CpSolver()
+    if approach == '2nd':
+        allt=cp_model.LinearExpr.Sum([lc[(l, p, b, t)] * (t+1)  for l in all_l \
+                                        for p in all_p \
+                                        for b in all_b \
+                                        for t in all_t] )
+
+        varr=cp_model.LinearExpr.Sum(60*m*n*lc[(l, p, b, t)] * (t+1) -allt for l in all_l \
+                                        for p in all_p \
+                                        for b in all_b \
+                                        for t in all_t )
+        model.Minimize(varr)
+
     status = solver.Solve(model)
     if status == 4: #optimal
         for b in all_b:
@@ -276,18 +306,18 @@ def Backtracking(lc, rmp, rmc):
     for b in all_b:
         for p in all_p:
             start = so_tiet - rmp[p][b]
-            taking_t = range(start,start + T[l])
-            taken_l = range(rmc,so_lop)
-            if T[l] <= rmp[p][b] and S[l] <= C[p] and c2b(l,b,taking_t,taken_l,lc):
+            if T[l] <= rmp[p][b] and S[l] <= C[p] and c2b(l,b,start,rmc,lc):
                 lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
-                for t in taking_t:
+                for t in range(start,start + T[l]):
                     lc_copy[(l,p,b,t)] = 1
                 rmp_copy[p][b] -= T[l]
                 next = Backtracking(lc_copy, rmp_copy, rmc - 1)
                 if next: return next
     return False
 
-def c2b(l0,b0,taking_t,taken_l,lc):
+def c2b(l0,b0,start_t,rmc,lc):
+    taking_t = range(start_t,start_t + T[l0])
+    taken_l = range(rmc,so_lop)
     for t in taking_t:
         for p in all_p:
             for l in taken_l:
