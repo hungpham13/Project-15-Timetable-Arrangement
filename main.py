@@ -262,7 +262,8 @@ def HeuristicStart(target):
 
 def TestHeuristic():
     best_result, max_arranged_p = 0,0
-    for target in ('P','LT','S'):
+    list_of_targets = ('P','LT','S')
+    for target in list_of_targets:
         lc = HeuristicStart(target)
         arranged_periods = sum(lc.values())
         if arranged_periods > max_arranged_p:
