@@ -56,6 +56,18 @@ def ngay_va_buoi(k): #lấy ngày và buổi từ k
 
     return(ngay[k//2],buoi[k%2])
 
+def print_solution(lc, algo):
+    for b in all_b:
+        print('Buoi',b+1,' '.join(ngay_va_buoi(b)))
+        for p in all_p:
+            print('----Phong %i: %i cho' %(p+1,C[p]))
+            for l in all_l:
+                periods = ' '.join(str(t+1) for t in all_t if lc[(l,p,b,t)] == 1)
+                if periods:
+                    print('-------------Lop %i: %i hoc sinh, giao vien %i, tiet %s' %(l+1,S[l],G[l],periods))
+            print('\n')
+        print('\n','\n')
+
 ###################
 #CP a.k.a or-tools#
 ###################
@@ -176,7 +188,7 @@ def test_Ortools(approach):
                                 ngay ,buoi = ngay_va_buoi(b)
                                 print('Class', l+1 ,'starts on', ngay, buoi, 'period', t+1, 'at room ', p+1, 'with teacher', G[l]+1 )
                                 Class.append(l)
-        
+
         # printer của CP
         # so_loi_giai = 1
         # solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
@@ -195,9 +207,6 @@ def test_Ortools(approach):
 ###########
 #Heuristic#
 ###########
-
-
-
 
 def check_candidate(l1,p1,b1,t1):
     global Count
@@ -223,7 +232,6 @@ def check_candidate(l1,p1,b1,t1):
 
 
 def Heuristic():
-    global starting
     for l in all_l_h:
         placement(l)
 
@@ -240,29 +248,35 @@ def placement(k):
 
 
 def HeuristicStart(target):
+    generate_decision_var('h')
     global all_l_h, all_p_h
     all_p_h = sorted(all_p,key = lambda x:C[x])
     if target == 'P': #ưu tiên xếp tiết #period
         all_l_h = sorted(all_l,key = lambda x: T[x])
-        Heuristic()
     if target == 'LT': #ưu tiên xếp số học sinh*tiết #learning time
         all_l_h = sorted(all_l,key = lambda x:T[x]*S[x])
-        Heuristic()
     if target == 'S': #ưu tiên xếp học sinh #Student
         all_l_h = sorted(all_l,key = lambda x:S[x])
-        Heuristic()
+    Heuristic()
+    return lc
 
-def TestHeuristic(target):
-    generate_decision_var('h')
-    HeuristicStart(target)
-    print_sol(target)
-# TestHeuristic('P')
+def TestHeuristic():
+    best_result, max_arranged_p = 0,0
+    for target in ('P','LT','S'):
+        lc = HeuristicStart(target)
+        arranged_periods = sum(lc.values())
+        if arranged_periods > max_arranged_p:
+            best_result, best_target,max_arranged_p = lc,target,arranged_periods
+    print('Heuristic with target',best_target)
+    print_solution(best_result,'h')
+    return best_result
+
 ###########
 #Backtrack#
 ###########
 
 def Backtracking(lc, rmp, rmc):
-    '''at first: rmc (remaining_classses) = so lop con lai 
+    '''at first: rmc (remaining_classses) = so lop con lai
                  rmp = remain_periods '''
     if not rmc:
         return lc
@@ -299,17 +313,6 @@ def test_Backtracking():
         print_solution(result,'b')
     return result
 
-def print_solution(lc, algo):
-    for b in all_b:
-        print('Buoi',b+1,' '.join(ngay_va_buoi(b)))
-        for p in all_p:
-            print('----Phong %i: %i cho' %(p+1,C[p]))
-            for l in all_l:
-                periods = ' '.join(str(t+1) for t in all_t if lc[(l,p,b,t)] == 1)
-                if periods:
-                    print('-------------Lop %i: %i hoc sinh, giao vien %i, tiet %s' %(l,S[l],G[l],periods))
-            print('\n')
-        print('\n','\n')
 
 
 #############
@@ -321,17 +324,20 @@ def right(lc):
         for t in all_t:
             for g in D_G:
                 if sum(sum(lc[(l,p,b,t)] for p in all_p) for l in D_G[g]) > 1: #2b
+                    print('Teacher %i teaches more than 1 class in session %i, period %i' %(g,b+1,t+1))
                     yield ('2b')
             for p in all_p:
                 if sum(lc[(l,p,b,t)] for l in all_l) > 1: #2a
+                    print('Room %i take more than 1 classes in session %i, period %i' %(p+1,b+1,t+1))
                     yield ('2a')
                 for l in all_l:
                     if S[l] > C[p] and lc[(l,p,b,t)] != 0: #1
+                        print("Room %i can't contains class %i, not enough seats" %(p+1,l+1))
                         yield ('1')
     for l in all_l:
-        if sum(sum(sum(lc[(l, p, b, t)] for t in all_t) \
-               for b in all_b) for p in all_p) != T[l]:  # 3a
-            print('Class',l)
+        taken_t = sum(sum(sum(lc[(l, p, b, t)] for t in all_t) for b in all_b) for p in all_p)
+        if taken_t != T[l]:  # 3a
+            print('Class %i take %i periods, it should take %i periods' %(l+1,taken_t,T[l]))
             yield ('3a')
         for p in all_p:
             for b in all_b:
@@ -344,13 +350,13 @@ def right(lc):
 def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
-    testFunction('P')
+    lc = testFunction()
     print("---Time: %s seconds ---" % (time.time() - start_time))
-    status = right(lc)
-    if not list(status):
+    status = list(right(lc))
+    if not status:
         print('Optimal solution')
     else:
-        print('Not optimal, violate constraint', ' '.join(status))
+        print('Not optimal, violate constraint'+ ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 check_solution(TestHeuristic)
 # TestHeuristic('P')
