@@ -209,26 +209,19 @@ def test_Ortools(approach):
 ###########
 
 def check_candidate(l1,p1,b1,t1):
-    global Count
-    if Count[l1]>0 and Count[l1]<T[l1] :    #các tiết đặt sau lần đầu sẽ được xếp liền nhau
-        Count[l1]+=1
-        return True
-    else:   #các tiết xếp lần đầu sẽ phải thỏa mãn các constraint
-        if Count [l1] >= T[l1]: # ko xếp thừa tiết
-            return False
-        if t1 + T[l1] > so_tiet:# đảm bảo đủ chỗ để xếp tiết (nếu lớp có 5 tiết thì không được bắt đầu ở tiết thứ 2)
-            return False
-        if S[l1] > C[p1]:
-            return False #cons 1 #phòng thiếu chỗ sẽ không được xếp vào
-        for l in all_l:
-            if lc[(l,p1,b1,t1)] == 1: #cons 2 a #1 phòng chỉ chứa 1 lớp
+    if t1 + T[l1] >6:# đảm bảo đủ chỗ để xếp tiết (nếu lớp có 5 tiết thì không được bắt đầu ở tiết thứ 2) 
+        return False
+    if S[l1] > C[p1]:
+        return False #cons 1 #phòng thiếu chỗ sẽ không được xếp vào
+    for t in range(t1, t1+T[l1]):#kiểm tra các tiết tiếp theo sau t1
+        for l in all_l_h:#các lớp còn lại
+            if lc[(l,p1,b1,t)] == 1: #cons 2 a #1 phòng chỉ chứa 1 lớp
                 return False
             if G[l] == G[l1]:
                 for p in all_p:
-                    if lc[(l,p,b1,t1)] == 1: #cons 2 b #1 gv chỉ dạy 1 lớp
+                    if lc[(l,p,b1,t)] == 1: #cons 2 b #1 gv chỉ dạy 1 lớp
                         return False
-        Count[l1]+=1
-        return True
+    return True
 
 
 def Heuristic():
@@ -242,9 +235,9 @@ def placement(k):
             for t in all_t:
                 status = check_candidate(k,p,b,t)
                 if status != False: #Nếu status là False thì sẽ không sửa biến lựa chọn
-                    lc[(k,p,b,t)] = 1
-                if Count[k] >= T[k]:
-                    return #Ngắt nếu đã xếp đủ
+                    for t1 in range(t, t+T[k]):
+                        lc[(k,p,b,t1)]=1
+                    return
 
 
 def HeuristicStart(target):
