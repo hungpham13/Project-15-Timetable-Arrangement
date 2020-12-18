@@ -353,11 +353,11 @@ def check_solution(testFunction):
     start_time = time.time()
     lc = testFunction()
     print("---Time: %s seconds ---" % (time.time() - start_time))
-    status = list(right(lc))
+    status = set(right(lc))
     if not status:
         print('Optimal solution')
     else:
-        print('Not optimal, violate constraint'+ ' '.join(status))
+        print('Not optimal, violate constraint: '+ ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 check_solution(TestHeuristic)
 # TestHeuristic('P')
