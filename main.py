@@ -23,11 +23,6 @@ def Input(FileName):
     all_t = range(so_tiet)
     all_l = list(range(so_lop))
 
-
-FileName= 'data4.txt'
-Input(FileName)
-
-
 def generate_decision_var(algo):
     ''' Generate descision variable base on specify algorithm
     algo: string - 'o': or-tools, 'b': backtracking, 'h': heuristic'''
@@ -50,13 +45,11 @@ def generate_decision_var(algo):
         remain_periods = [[so_tiet for b in all_b] for p in all_p]
 
 def ngay_va_buoi(k): #lấy ngày và buổi từ k
-
     ngay = ['Monday','Tuesday','Wednesday','Thursday','Friday']
     buoi = ['Morning','Afternoon']
-
     return(ngay[k//2],buoi[k%2])
 
-def print_solution(lc, algo):
+def print_solution(lc):
     for b in all_b:
         print('Buoi',b+1,' '.join(ngay_va_buoi(b)))
         for p in all_p:
@@ -72,48 +65,13 @@ def print_solution(lc, algo):
 #CP a.k.a or-tools#
 ###################
 
-
-# sol. printer TBD
-class SolutionPrinter(cp_model.CpSolverSolutionCallback):
-    """Print intermediate solutions."""
-
-    def __init__(self, lc, n, m, so_buoi, so_tiet, so_loi_giai):
-        cp_model.CpSolverSolutionCallback.__init__(self)
-        self._lc = lc
-        self._l = n
-        self._p = m
-        self._so_buoi = so_buoi
-        self._so_tiet = so_tiet
-        self._so_loi_giai = so_loi_giai
-        self._solution_count = 0
-
-
-    def on_solution_callback(self):
-        self._solution_count += 1
-        if self._solution_count <= self._so_loi_giai:
-            print('--------------loi giai %i----------------' % self._solution_count)
-            Class=[]
-            for b in range(self._so_buoi):
-                for p in range(self._p):
-                    for t in range(self._so_tiet):
-                        for l in range(self._l):
-                            if self.Value(self._lc[(l,p,b,t)]):
-                                if l not in Class:
-                                    ngay ,buoi = ngay_va_buoi(b)
-                                    print('Class', l+1 ,'starts on', ngay, buoi, 'period', t+1, 'at room ', p+1, 'with teacher', G[l]+1 )
-                                    Class.append(l)
-
-    def solution_count(self):
-        return self._solution_count
-#end printer
-
 def add_constraints(approach):
     #Constraint 1,2
     for b in all_b:
         for t in all_t:
             for g in D_G:
                 model.Add(sum(sum(lc[(l,p,b,t)] for p in all_p) \
-                                                for l in g) <= 1)           #2b
+                                                for l in D_G[g]) <= 1)           #2b
             for p in all_p:
                 model.Add(sum(lc[(l,p,b,t)] for l in all_l) <= 1) #2a
                 for l in all_l:
@@ -159,7 +117,7 @@ def add_constraints(approach):
                         model.Add(sum(lc[(l, p, b, t)] for t in all_t) == T[l]).OnlyEnforceIf(lc[(l,p,b,t)])#cùng phòng buổi #approach2
 
 def test_Ortools(approach):
-    global model
+    global model,solver
     model = cp_model.CpModel()
     generate_decision_var('o')
     add_constraints(approach)
@@ -178,31 +136,15 @@ def test_Ortools(approach):
         model.Minimize(varr)
 
     status = solver.Solve(model)
+    result = {}
+    for i in lc:
+        result[i] = solver.Value(lc[i])
     if status == 4: #optimal
-        for b in all_b:
-            for p in all_p:
-                for t in all_t:
-                    for l in all_l:
-                        if solver.Value(lc[(l,p,b,t)]) == 1:
-                            if l not in Class:
-                                ngay ,buoi = ngay_va_buoi(b)
-                                print('Class', l+1 ,'starts on', ngay, buoi, 'period', t+1, 'at room ', p+1, 'with teacher', G[l]+1 )
-                                Class.append(l)
-
-        # printer của CP
-        # so_loi_giai = 1
-        # solution_printer = SolutionPrinter(lc, n, m, so_buoi, so_tiet, so_loi_giai)
-        # solver.SearchForAllSolutions(model, solution_printer)
-        # print(status)
-        # print('Statistics')
-        # print('  - conflicts       : %i' % solver.NumConflicts())
-        # print('  - branches        : %i' % solver.NumBranches())
-        # print('  - wall time       : %f s' % solver.WallTime())
-        # print('  - solutions found : %i' % solution_printer.solution_count())
+        print_solution(result)
     else:
         print('Cannot place all class due to limiting rooms and/or conflicting schedule')
+    return result
 
-# test_Ortools()
 
 ###########
 #Heuristic#
@@ -262,7 +204,7 @@ def TestHeuristic():
         if arranged_periods > max_arranged_p:
             best_result, best_target,max_arranged_p = lc,target,arranged_periods
     print('Heuristic with target',best_target)
-    print_solution(best_result,'h')
+    print_solution(best_result)
     return best_result
 
 ###########
@@ -304,7 +246,7 @@ def test_Backtracking():
     if not result:
         print("Can't arrange")
     else:
-        print_solution(result,'b')
+        print_solution(result)
     return result
 
 
@@ -344,7 +286,7 @@ def right(lc):
 def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
-    lc = testFunction()
+    lc = testFunction('2nd')
     print("---Time: %s seconds ---" % (time.time() - start_time))
     status = set(right(lc))
     if not status:
@@ -352,5 +294,7 @@ def check_solution(testFunction):
     else:
         print('Not optimal, violate constraint: '+ ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
-check_solution(TestHeuristic)
-# TestHeuristic('P')
+
+FileName= 'data.txt'
+Input(FileName)
+check_solution(test_Ortools)
