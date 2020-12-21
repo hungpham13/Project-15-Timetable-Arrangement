@@ -219,7 +219,7 @@ def Backtracking(lc, rmp, rmc):
     l = rmc - 1
     for b in all_b:
         for p in all_p:
-            if satisfy_constraints(l,b,p,rmp,rmc,lc):
+            if satisfy_constraints(l,b,p,rmp[p][b],lc):
                 lc_copy, rmp_copy = deepcopy(lc), deepcopy(rmp)
                 taking_t = range(so_tiet - rmp[p][b], so_tiet - rmp[p][b] + T[l])
                 for t in taking_t:
@@ -229,13 +229,13 @@ def Backtracking(lc, rmp, rmc):
                 if next: return next
     return False
 
-def satisfy_constraints(l0,b0,p0,rmp,rmc,lc):
-    if T[l0] > rmp[p0][b0] or S[l0] > C[p0]: #1,2a,3
+def satisfy_constraints(l0,b0,p0,periods_left,lc):
+    if T[l0] > periods_left or S[l0] > C[p0]: #1,2a,3
         return False
-    start_t = so_tiet - rmp[p0][b0]
+    start_t = so_tiet - periods_left
     for t in range(start_t, start_t + T[l0]): #taking_t
         for p in all_p:
-            for l in range(rmc, so_lop): #taken_l
+            for l in range(l0+1, so_lop): #taken_l
                 if lc[(l,p,b0,t)] == 1 and G[l0] == G[l]: #2b
                     return False
     return True
@@ -286,7 +286,7 @@ def right(lc):
 def check_solution(testFunction):
     print('Start checking....')
     start_time = time.time()
-    lc = testFunction('2nd')
+    lc = testFunction()
     print("---Time: %s seconds ---" % (time.time() - start_time))
     status = set(right(lc))
     if not status:
@@ -297,4 +297,4 @@ def check_solution(testFunction):
 
 FileName= 'data.txt'
 Input(FileName)
-check_solution(test_Ortools)
+check_solution(test_Backtracking)
