@@ -281,6 +281,7 @@ def right(lc):
                     l_S = [sum(lc[(l,p,b,t)] for t in range(i,i+T[l])) \
                            for i in range(7-T[l])]
                     if T[l] not in l_S: #3b
+                        print('The periods class %i taken in sessions %i, room %i are not adjacent' %(l+1,b+1,p+1))
                         yield ('3b')
 
 def check_solution(testFunction):
