@@ -65,7 +65,7 @@ def print_solution(lc):
 #CP a.k.a or-tools#
 ###################
 
-def add_constraints(approach):
+def add_constraints():
     #Constraint 1,2
     for b in all_b:
         for t in all_t:
@@ -111,30 +111,15 @@ def add_constraints(approach):
         for p in all_p:
             for b in all_b:
                for t in all_t:
-                    if approach == '1st':
-                        model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
-                    if approach == '2nd':
-                        model.Add(sum(lc[(l, p, b, t)] for t in all_t) == T[l]).OnlyEnforceIf(lc[(l,p,b,t)])#cùng phòng buổi #approach2
+                    model.Add(continuous(l,p,b)).OnlyEnforceIf(lc[(l,p,b,t)]) #3b
 
-def test_Ortools(approach):
+def test_Ortools():
     global model,solver
     model = cp_model.CpModel()
     generate_decision_var('o')
-    add_constraints(approach)
+    add_constraints()
     #Start solving and printing sols
     solver = cp_model.CpSolver()
-    if approach == '2nd':
-        allt=cp_model.LinearExpr.Sum([lc[(l, p, b, t)] * (t+1)  for l in all_l \
-                                        for p in all_p \
-                                        for b in all_b \
-                                        for t in all_t] )
-
-        varr=cp_model.LinearExpr.Sum(so_lop*so_phong*so_buoi*so_tiet*lc[(l, p, b, t)] * (t+1) -allt for l in all_l \
-                                        for p in all_p \
-                                        for b in all_b \
-                                        for t in all_t )
-        model.Minimize(varr)
-
     status = solver.Solve(model)
     result = {}
     for i in lc:
@@ -298,4 +283,4 @@ def check_solution(testFunction):
 
 FileName= 'data.txt'
 Input(FileName)
-check_solution(test_Backtracking)
+check_solution(test_Ortools)
