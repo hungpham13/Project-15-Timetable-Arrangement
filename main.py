@@ -79,7 +79,7 @@ def add_constraints():
                         model.Add(lc[(l,p,b,t)] == 0)       #1
 
     #Constraint 3
-    def continuous(l, p, b): #1st approach
+    def continuous(l, p, b):
         if T[l] == 6:
             return sum(lc[(l, p, b, t)] for t in all_t) == 6
         if T[l] == 5:
@@ -281,6 +281,6 @@ def check_solution(testFunction):
         print('Not optimal, violate constraint: '+ ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
-FileName= 'data.txt'
+FileName= 'data4.txt'
 Input(FileName)
 check_solution(test_Ortools)
