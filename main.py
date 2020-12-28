@@ -150,11 +150,9 @@ def check_candidate(l1,p1,b1,t1):
                         return False
     return True
 
-
 def Heuristic():
     for l in all_l_h:
         placement(l)
-
 
 def placement(k):
     for p in all_p_h:
@@ -165,7 +163,6 @@ def placement(k):
                     for t1 in range(t, t+T[k]):
                         lc[(k,p,b,t1)]=1
                     return
-
 
 def HeuristicStart(target):
     generate_decision_var('h')
@@ -281,6 +278,6 @@ def check_solution(testFunction):
         print('Not optimal, violate constraint: '+ ' '.join(status))
     print("Total memory usage:",resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
 
-FileName= 'data4.txt'
+FileName= 'data.txt'
 Input(FileName)
-check_solution(test_Ortools)
+check_solution(test_Backtracking)
